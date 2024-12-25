@@ -4,6 +4,7 @@ import Dashboard from "./pages/Dashboard";
 import TopicResearch from "./pages/TopicResearch";
 import Scripts from "./pages/Scripts";
 import Videos from "./pages/Videos";
+import Settings from "./pages/Settings";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/topics" element={<TopicResearch />} />
           <Route path="/scripts" element={<Scripts />} />
           <Route path="/videos" element={<Videos />} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
       </DashboardLayout>
     </Router>
