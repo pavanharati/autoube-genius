@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export interface VideoUploadParams {
   title: string;
   description: string;
@@ -14,20 +16,51 @@ export interface VideoAnalytics {
   engagement: number;
 }
 
+export const initiateYouTubeAuth = async () => {
+  const { data: { url }, error } = await supabase.functions.invoke('youtube-auth', {
+    body: { action: 'getAuthUrl' }
+  });
+
+  if (error) throw error;
+  window.location.href = url;
+};
+
+export const handleYouTubeCallback = async (code: string) => {
+  const { error } = await supabase.functions.invoke('youtube-auth', {
+    body: { action: 'getToken', code }
+  });
+
+  if (error) throw error;
+  return true;
+};
+
 export const uploadVideo = async (params: VideoUploadParams): Promise<string> => {
-  // This would need to be implemented with proper OAuth2 flow and backend integration
-  console.log('Video upload params:', params);
-  return 'mock-video-id';
+  const formData = new FormData();
+  formData.append('video', params.videoFile);
+  formData.append('title', params.title);
+  formData.append('description', params.description);
+  formData.append('tags', JSON.stringify(params.tags));
+  formData.append('privacyStatus', params.privacyStatus || 'private');
+  
+  if (params.thumbnail) {
+    formData.append('thumbnail', params.thumbnail);
+  }
+
+  const { data, error } = await supabase.functions.invoke('youtube-upload', {
+    body: formData
+  });
+
+  if (error) throw error;
+  return data.videoId;
 };
 
 export const getVideoAnalytics = async (videoId: string): Promise<VideoAnalytics> => {
-  // Mock implementation
-  return {
-    views: 1000,
-    likes: 150,
-    comments: 45,
-    engagement: 0.15
-  };
+  const { data, error } = await supabase.functions.invoke('youtube-analytics', {
+    body: { videoId }
+  });
+
+  if (error) throw error;
+  return data;
 };
 
 export const getChannelAnalytics = async (): Promise<{
@@ -35,10 +68,10 @@ export const getChannelAnalytics = async (): Promise<{
   totalViews: number;
   averageEngagement: number;
 }> => {
-  // Mock implementation
-  return {
-    subscribers: 10000,
-    totalViews: 500000,
-    averageEngagement: 0.12
-  };
+  const { data, error } = await supabase.functions.invoke('youtube-channel-analytics', {
+    body: {}
+  });
+
+  if (error) throw error;
+  return data;
 };
