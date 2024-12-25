@@ -3,6 +3,12 @@ import { Video, Upload, Play, Edit, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { generateScript } from "@/utils/api/openai";
+import { generateVoiceover } from "@/utils/api/elevenlabs";
+import { uploadVideo } from "@/utils/api/youtube";
+import { generateThumbnail } from "@/utils/api/canva";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface VideoItem {
   id: string;
@@ -15,6 +21,7 @@ interface VideoItem {
 
 const Videos = () => {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const { toast } = useToast();
   
   // Mock videos data (in a real app, this would come from an API)
   const videos: VideoItem[] = [
@@ -44,6 +51,59 @@ const Videos = () => {
     },
   ];
 
+  const handleUploadVideo = async (file: File) => {
+    try {
+      // 1. Generate script
+      const script = await generateScript({
+        topic: file.name.split('.')[0],
+        style: 'informative',
+      });
+
+      // 2. Generate voiceover
+      const voiceover = await generateVoiceover({
+        text: script,
+      });
+
+      // 3. Generate thumbnail
+      const thumbnail = await generateThumbnail({
+        title: file.name.split('.')[0],
+        imagePrompt: "Create an engaging thumbnail for " + file.name,
+      });
+
+      // 4. Upload to YouTube
+      const videoId = await uploadVideo({
+        title: file.name.split('.')[0],
+        description: script.slice(0, 500), // First 500 chars as description
+        tags: [],
+        videoFile: file,
+      });
+
+      // 5. Save to Supabase
+      const { error } = await supabase.from('videos').insert({
+        title: file.name.split('.')[0],
+        description: script.slice(0, 500),
+        script_content: script,
+        thumbnail_url: thumbnail,
+        video_url: `https://youtube.com/watch?v=${videoId}`,
+        status: 'Processing',
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Video processing started successfully",
+      });
+    } catch (error) {
+      console.error('Error processing video:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process video",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusColor = (status: VideoItem["status"]) => {
     switch (status) {
       case "Published":
@@ -66,7 +126,19 @@ const Videos = () => {
             Manage your YouTube videos
           </p>
         </div>
-        <Button className="gap-2">
+        <Button 
+          className="gap-2"
+          onClick={() => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'video/*';
+            input.onchange = (e) => {
+              const file = (e.target as HTMLInputElement).files?.[0];
+              if (file) handleUploadVideo(file);
+            };
+            input.click();
+          }}
+        >
           <Upload className="h-4 w-4" />
           Upload Video
         </Button>
