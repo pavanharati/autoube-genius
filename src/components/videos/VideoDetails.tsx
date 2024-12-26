@@ -1,7 +1,7 @@
-import { Video } from "@/types/video";
+import { type Video } from "@/types/video";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit, Play, Trash2 } from "lucide-react";
+import { Edit, Play, Trash2, Video as VideoIcon } from "lucide-react";
 
 interface VideoDetailsProps {
   video: Video | undefined;
@@ -26,7 +26,7 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
       <Card className="h-full">
         <div className="h-full flex items-center justify-center text-muted-foreground">
           <div className="text-center">
-            <Video className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <VideoIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>Select a video to view details</p>
           </div>
         </div>
