@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { TrendingUp } from "lucide-react"
 import { useGoogleTrends } from "@/hooks/useGoogleTrends"
 import { SearchBar } from "@/components/topics/SearchBar"
@@ -10,13 +10,15 @@ const TopicResearch = () => {
   const { toast } = useToast()
   const { data: trendingTopics, isLoading, error } = useGoogleTrends()
 
-  if (error) {
-    toast({
-      title: "Error",
-      description: "Failed to fetch trending topics",
-      variant: "destructive",
-    })
-  }
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch trending topics",
+        variant: "destructive",
+      })
+    }
+  }, [error, toast])
 
   return (
     <div className="space-y-8">
