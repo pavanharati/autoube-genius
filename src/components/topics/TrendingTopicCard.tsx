@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface TrendingTopicProps {
@@ -6,12 +7,13 @@ interface TrendingTopicProps {
     searchVolume: string
     trend: string
     engagement: string
+    relatedTopics?: string[]
   }
 }
 
 export const TrendingTopicCard = ({ topic }: TrendingTopicProps) => {
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
         <CardTitle className="text-lg">{topic.topic}</CardTitle>
       </CardHeader>
