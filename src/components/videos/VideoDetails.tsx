@@ -3,7 +3,9 @@ import { useState } from "react";
 import { type Video } from "@/types/video";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit, Play, Trash2, Video as VideoIcon } from "lucide-react";
+import { Edit, Play, Trash2, Video as VideoIcon, Closed, Caption } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface VideoDetailsProps {
   video: Video | undefined;
@@ -11,6 +13,7 @@ interface VideoDetailsProps {
 
 const VideoDetails = ({ video }: VideoDetailsProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [captionsEnabled, setCaptionsEnabled] = useState(true);
 
   const getStatusColor = (status: Video["status"]) => {
     switch (status) {
@@ -59,13 +62,33 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
         <div className="space-y-6">
           <div className="aspect-video rounded-lg overflow-hidden bg-card relative">
             {isPlaying ? (
-              <video 
-                src={video.videoUrl || `https://storage.googleapis.com/gtv-videos-bucket/sample/${video.id === "1" ? "ForBiggerBlazes" : video.id === "2" ? "ElephantsDream" : "BigBuckBunny"}.mp4`}
-                className="w-full h-full object-cover"
-                controls
-                autoPlay
-                onEnded={() => setIsPlaying(false)}
-              />
+              <div className="relative">
+                <video 
+                  src={video.videoUrl || `https://storage.googleapis.com/gtv-videos-bucket/sample/${video.id === "1" ? "ForBiggerBlazes" : video.id === "2" ? "ElephantsDream" : "BigBuckBunny"}.mp4`}
+                  className="w-full h-full object-cover"
+                  controls
+                  autoPlay
+                  onEnded={() => setIsPlaying(false)}
+                >
+                  {captionsEnabled && video.captions && (
+                    <track 
+                      kind="subtitles" 
+                      src={video.captions} 
+                      label="English" 
+                      srcLang="en" 
+                      default 
+                    />
+                  )}
+                </video>
+                <div className="absolute bottom-16 right-4 flex items-center gap-2 bg-black/70 text-white p-2 rounded-md">
+                  <Label htmlFor="captions-toggle" className="text-xs">Captions</Label>
+                  <Switch 
+                    id="captions-toggle"
+                    checked={captionsEnabled}
+                    onCheckedChange={setCaptionsEnabled}
+                  />
+                </div>
+              </div>
             ) : (
               <div className="relative group">
                 <img 
@@ -87,10 +110,14 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
               </div>
             )}
           </div>
-          <div className="grid gap-4">
+          <div className="grid md:grid-cols-2 gap-4">
             <div>
               <h3 className="font-semibold mb-1">Title</h3>
               <p className="text-muted-foreground">{video.title}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-1">Category</h3>
+              <p className="text-muted-foreground">{video.category || "Uncategorized"}</p>
             </div>
             <div>
               <h3 className="font-semibold mb-1">Upload Date</h3>
@@ -102,6 +129,16 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
                 {video.status}
               </span>
             </div>
+            <div>
+              <h3 className="font-semibold mb-1">Duration</h3>
+              <p className="text-muted-foreground">{video.duration}</p>
+            </div>
+            {video.trending && (
+              <div>
+                <h3 className="font-semibold mb-1">Trending</h3>
+                <p className="text-muted-foreground">Trending for {video.trendingPeriod || "day"}</p>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
