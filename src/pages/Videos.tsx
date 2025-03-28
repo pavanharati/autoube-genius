@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { Upload, TrendingUp, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import VideoList from "@/components/videos/VideoList";
 import VideoDetails from "@/components/videos/VideoDetails";
 import VideoGenerator from "@/components/videos/VideoGenerator";
@@ -15,7 +14,6 @@ const Videos = () => {
   const [selectedVideo, setSelectedVideo] = useState<string | null>("1");
   const [isGenerating, setIsGenerating] = useState(false);
   const [showGenerator, setShowGenerator] = useState(false);
-  const { toast } = useToast();
   
   // Mock videos data with sample video URLs and captions
   const videos: Video[] = [
@@ -60,25 +58,15 @@ const Videos = () => {
 
   const handleUploadVideo = async (file: File) => {
     try {
-      toast({
-        title: "Video Upload Started",
-        description: "Your video is being processed...",
-      });
-      
       // In a real app, this would upload and process the video
+      console.log("Uploading video:", file.name);
+      
+      // Mock upload success after 2 seconds
       setTimeout(() => {
-        toast({
-          title: "Video Uploaded",
-          description: "Your video has been uploaded and is being processed.",
-        });
+        console.log("Video uploaded successfully");
       }, 2000);
     } catch (error) {
       console.error('Error processing video:', error);
-      toast({
-        title: "Error",
-        description: "Failed to process video",
-        variant: "destructive",
-      });
     }
   };
 
@@ -86,21 +74,16 @@ const Videos = () => {
     setIsGenerating(true);
     try {
       // In a real app, this would generate a video
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      console.log("Generating video with title:", title);
+      console.log("Script:", script);
+      console.log("Options:", options);
       
-      toast({
-        title: "Video Generated",
-        description: "Your video has been successfully generated.",
-      });
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      console.log("Video generated successfully");
       
       setShowGenerator(false);
     } catch (error) {
       console.error('Error generating video:', error);
-      toast({
-        title: "Error",
-        description: "Failed to generate video",
-        variant: "destructive",
-      });
     } finally {
       setIsGenerating(false);
     }
