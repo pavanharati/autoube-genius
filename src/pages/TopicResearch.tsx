@@ -18,6 +18,7 @@ const TopicResearch = () => {
     handleTopicSelect,
     handleGenerateScript,
     handleSaveScript,
+    handleCreateVideo,
     backToTopics,
     setTopicAndScript
   } = useTopicResearch();
@@ -53,6 +54,7 @@ const TopicResearch = () => {
           onGenerateScript={handleGenerateScript}
           onSaveScript={handleSaveScript}
           onBackToTopics={backToTopics}
+          onCreateVideo={handleCreateVideo}
         />
       )}
     </div>

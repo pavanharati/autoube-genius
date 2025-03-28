@@ -1,9 +1,12 @@
 
-import { FileText, ArrowLeft, Save } from "lucide-react";
+import { FileText, ArrowLeft, Save, Video } from "lucide-react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendingTopic } from "@/types/video";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import VideoGenerator from "@/components/videos/VideoGenerator";
+import { useState } from "react";
 
 interface TopicDetailViewProps {
   selectedTopic: TrendingTopic;
@@ -12,6 +15,7 @@ interface TopicDetailViewProps {
   onGenerateScript: () => Promise<void>;
   onSaveScript: () => void;
   onBackToTopics: () => void;
+  onCreateVideo: (title: string, script: string, options: any) => Promise<void>;
 }
 
 const TopicDetailView = ({
@@ -20,8 +24,24 @@ const TopicDetailView = ({
   isGeneratingScript,
   onGenerateScript,
   onSaveScript,
-  onBackToTopics
+  onBackToTopics,
+  onCreateVideo
 }: TopicDetailViewProps) => {
+  const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+
+  const handleCreateVideo = async (title: string, videoScript: string, options: any) => {
+    setIsGeneratingVideo(true);
+    try {
+      await onCreateVideo(title, videoScript, options);
+      setIsVideoDialogOpen(false);
+    } catch (error) {
+      console.error("Error creating video:", error);
+    } finally {
+      setIsGeneratingVideo(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Button 
@@ -72,14 +92,39 @@ const TopicDetailView = ({
               <h3 className="text-lg font-medium">Video Script</h3>
               <div className="flex gap-2">
                 {script && (
-                  <Button 
-                    onClick={onSaveScript} 
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    <Save className="h-4 w-4" />
-                    Save Script
-                  </Button>
+                  <>
+                    <Button 
+                      onClick={onSaveScript} 
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      <Save className="h-4 w-4" />
+                      Save Script
+                    </Button>
+                    
+                    <Dialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="outline"
+                          className="gap-2"
+                        >
+                          <Video className="h-4 w-4" />
+                          Create Video
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl">
+                        <DialogHeader>
+                          <DialogTitle>Create Video from Script</DialogTitle>
+                        </DialogHeader>
+                        <VideoGenerator 
+                          onGenerate={handleCreateVideo} 
+                          isGenerating={isGeneratingVideo}
+                          initialScript={script}
+                          initialTitle={selectedTopic.topic}
+                        />
+                      </DialogContent>
+                    </Dialog>
+                  </>
                 )}
                 <Button 
                   onClick={onGenerateScript} 

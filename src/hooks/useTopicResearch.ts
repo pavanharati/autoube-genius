@@ -1,11 +1,13 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { TrendingTopic } from "@/types/video";
+import { TrendingTopic, VideoGenerationOptions } from "@/types/video";
 import { getTopicInsights } from "@/utils/api/googleTrends";
 import { generateScript } from "@/utils/api/openai";
 import { useRAG } from "@/hooks/useRAG";
 import { useGoogleTrends } from "@/hooks/useGoogleTrends";
+import { generateVideo } from "@/utils/api/videoGenerator";
+import { useNavigate } from "react-router-dom";
 
 export const useTopicResearch = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -21,6 +23,7 @@ export const useTopicResearch = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('day');
   const { toast } = useToast();
   const { initialize } = useRAG();
+  const navigate = useNavigate();
   
   const { data: trendingTopics = [], isLoading } = useGoogleTrends(undefined, selectedPeriod);
 
@@ -118,6 +121,37 @@ export const useTopicResearch = () => {
     });
   };
 
+  const handleCreateVideo = async (title: string, script: string, options: VideoGenerationOptions) => {
+    try {
+      toast({
+        title: "Processing",
+        description: "Generating your video. This may take a few moments...",
+      });
+
+      const { videoUrl, captionsUrl } = await generateVideo(title, script, options);
+      
+      toast({
+        title: "Success",
+        description: "Video generated successfully! Redirecting to Videos page.",
+      });
+
+      // Wait a moment before redirecting to allow the toast to be seen
+      setTimeout(() => {
+        navigate("/videos");
+      }, 2000);
+
+      return { videoUrl, captionsUrl };
+    } catch (error) {
+      console.error("Failed to generate video:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate video. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const backToTopics = () => {
     setSelectedTopic(null);
     setInsights(null);
@@ -143,6 +177,7 @@ export const useTopicResearch = () => {
     handleTopicSelect,
     handleGenerateScript,
     handleSaveScript,
+    handleCreateVideo,
     backToTopics,
     setTopicAndScript
   };
