@@ -3,7 +3,7 @@ import { FileText, ArrowLeft, Save, Video } from "lucide-react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TrendingTopic } from "@/types/video";
+import { TrendingTopic, VideoGenerationOptions } from "@/types/video";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import VideoGenerator from "@/components/videos/VideoGenerator";
 import { useState } from "react";
@@ -15,7 +15,7 @@ interface TopicDetailViewProps {
   onGenerateScript: () => Promise<void>;
   onSaveScript: () => void;
   onBackToTopics: () => void;
-  onCreateVideo: (title: string, script: string, options: any) => Promise<void>;
+  onCreateVideo: (title: string, script: string, options: VideoGenerationOptions) => Promise<{ videoUrl: string; captionsUrl: string; }>;
 }
 
 const TopicDetailView = ({
@@ -30,7 +30,7 @@ const TopicDetailView = ({
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
 
-  const handleCreateVideo = async (title: string, videoScript: string, options: any) => {
+  const handleCreateVideo = async (title: string, videoScript: string, options: VideoGenerationOptions) => {
     setIsGeneratingVideo(true);
     try {
       await onCreateVideo(title, videoScript, options);

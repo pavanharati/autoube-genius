@@ -128,7 +128,7 @@ export const useTopicResearch = () => {
         description: "Generating your video. This may take a few moments...",
       });
 
-      const { videoUrl, captionsUrl } = await generateVideo(title, script, options);
+      const result = await generateVideo(title, script, options);
       
       toast({
         title: "Success",
@@ -140,7 +140,7 @@ export const useTopicResearch = () => {
         navigate("/videos");
       }, 2000);
 
-      return { videoUrl, captionsUrl };
+      return result;
     } catch (error) {
       console.error("Failed to generate video:", error);
       toast({
