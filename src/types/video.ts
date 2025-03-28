@@ -1,3 +1,4 @@
+
 export type Video = {
   id: string;
   title: string;
@@ -5,4 +6,5 @@ export type Video = {
   status: "Processing" | "Ready" | "Published";
   duration: string;
   uploadDate: string;
+  videoUrl?: string; // Added video URL field
 };

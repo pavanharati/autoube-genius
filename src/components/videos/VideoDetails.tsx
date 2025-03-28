@@ -1,3 +1,5 @@
+
+import { useState } from "react";
 import { type Video } from "@/types/video";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +10,8 @@ interface VideoDetailsProps {
 }
 
 const VideoDetails = ({ video }: VideoDetailsProps) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+
   const getStatusColor = (status: Video["status"]) => {
     switch (status) {
       case "Published":
@@ -53,18 +57,35 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <div className="aspect-video rounded-lg overflow-hidden bg-card relative group">
-            <img 
-              src={video.thumbnail}
-              alt="Video thumbnail"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <Button variant="outline" size="lg" className="gap-2">
-                <Play className="h-5 w-5" />
-                Play Preview
-              </Button>
-            </div>
+          <div className="aspect-video rounded-lg overflow-hidden bg-card relative">
+            {isPlaying ? (
+              <video 
+                src={video.videoUrl || `https://storage.googleapis.com/gtv-videos-bucket/sample/${video.id === "1" ? "ForBiggerBlazes" : video.id === "2" ? "ElephantsDream" : "BigBuckBunny"}.mp4`}
+                className="w-full h-full object-cover"
+                controls
+                autoPlay
+                onEnded={() => setIsPlaying(false)}
+              />
+            ) : (
+              <div className="relative group">
+                <img 
+                  src={video.thumbnail}
+                  alt="Video thumbnail"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="gap-2"
+                    onClick={() => setIsPlaying(true)}
+                  >
+                    <Play className="h-5 w-5" />
+                    Play Video
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
           <div className="grid gap-4">
             <div>

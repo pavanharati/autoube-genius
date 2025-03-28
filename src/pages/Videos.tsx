@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,10 +13,10 @@ import VideoDetails from "@/components/videos/VideoDetails";
 import { Video } from "@/types/video";
 
 const Videos = () => {
-  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<string | null>("1"); // Set default selected video
   const { toast } = useToast();
   
-  // Mock videos data (in a real app, this would come from an API)
+  // Mock videos data with sample video URLs
   const videos: Video[] = [
     {
       id: "1",
@@ -24,6 +25,7 @@ const Videos = () => {
       status: "Published",
       duration: "10:23",
       uploadDate: "2024-02-20",
+      videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
     },
     {
       id: "2",
@@ -32,6 +34,7 @@ const Videos = () => {
       status: "Processing",
       duration: "08:45",
       uploadDate: "2024-02-19",
+      videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
     },
     {
       id: "3",
@@ -40,6 +43,7 @@ const Videos = () => {
       status: "Ready",
       duration: "12:30",
       uploadDate: "2024-02-18",
+      videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
     },
   ];
 
