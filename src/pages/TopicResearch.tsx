@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { TrendingUp, FileText, ArrowLeft, Clock, Save } from "lucide-react";
 import { SearchBar } from "@/components/topics/SearchBar";
-import { TrendingTopicCard } from "@/components/topics/TrendingTopicCard";
+import TrendingTopicCard from "@/components/topics/TrendingTopicCard";
 import { useToast } from "@/hooks/use-toast";
 import { fetchTrendingTopics, getTopicInsights, TrendingTopic } from "@/utils/api/googleTrends";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
