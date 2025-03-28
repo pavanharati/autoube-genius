@@ -19,7 +19,7 @@ interface TrendingTopicProps {
 }
 
 export const TrendingTopicCard = ({ topic, onGenerateScript }: TrendingTopicProps) => {
-  const { generateEnhancedScript, isLoading } = useRAG();
+  const { generateEnhancedScript, isInitialized, isLoading } = useRAG();
   const { toast } = useToast();
   const [generating, setGenerating] = useState(false);
 
@@ -34,19 +34,21 @@ export const TrendingTopicCard = ({ topic, onGenerateScript }: TrendingTopicProp
         targetLength: 'medium'
       });
       
-      if (onGenerateScript) {
+      if (onGenerateScript && script) {
         onGenerateScript(script);
       }
       
       toast({
-        title: "Smart Script Generated",
-        description: "Your enhanced script is ready using our RAG system",
+        title: isInitialized ? "Smart Script Generated" : "Script Generated",
+        description: isInitialized 
+          ? "Your enhanced script is ready using our RAG system" 
+          : "Script generated successfully (Knowledge base not initialized)",
       });
     } catch (error) {
-      console.error("Error generating smart script:", error);
+      console.error("Error generating script:", error);
       toast({
         title: "Error",
-        description: "Failed to generate smart script. Falling back to standard generation.",
+        description: "Failed to generate script. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -77,19 +79,21 @@ export const TrendingTopicCard = ({ topic, onGenerateScript }: TrendingTopicProp
         {onGenerateScript && (
           <Button 
             variant="outline" 
-            className="w-full mt-2 gap-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:from-blue-500/20 hover:to-purple-500/20"
+            className={`w-full mt-2 gap-2 ${isInitialized 
+              ? "bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:from-blue-500/20 hover:to-purple-500/20" 
+              : ""}`}
             onClick={handleGenerateSmartScript}
-            disabled={generating}
+            disabled={generating || isLoading}
           >
-            {generating ? (
+            {generating || isLoading ? (
               <>
                 <Spinner size="sm" className="text-blue-500" />
-                Generating Smart Script...
+                {isInitialized ? "Generating Smart Script..." : "Generating Script..."}
               </>
             ) : (
               <>
                 <Sparkles className="h-4 w-4 text-blue-500" />
-                Generate Smart Script
+                {isInitialized ? "Generate Smart Script" : "Generate Script"}
               </>
             )}
           </Button>

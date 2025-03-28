@@ -8,9 +8,24 @@ let vectorStore: MemoryVectorStore | null = null;
 
 // Initialize the vector store with documents
 export async function initializeRAG(documents: Array<{text: string, metadata?: Record<string, any>}>) {
+  if (!documents || documents.length === 0) {
+    console.error("No documents provided for RAG initialization");
+    throw new Error("No documents provided for RAG initialization");
+  }
+
+  if (!import.meta.env.VITE_OPENAI_API_KEY) {
+    console.error("OpenAI API key is missing");
+    throw new Error("OpenAI API key is missing. Please add it in your environment variables.");
+  }
+  
   try {
+    console.log(`Initializing RAG with ${documents.length} documents`);
+    
     const docs = documents.map(
-      doc => new Document({ pageContent: doc.text, metadata: doc.metadata || {} })
+      doc => new Document({ 
+        pageContent: doc.text, 
+        metadata: doc.metadata || {} 
+      })
     );
     
     // Use OpenAI embeddings (requires API key)
@@ -20,11 +35,13 @@ export async function initializeRAG(documents: Array<{text: string, metadata?: R
     
     // Create a simple in-memory vector store
     vectorStore = await MemoryVectorStore.fromDocuments(docs, embeddings);
+    console.log("RAG system successfully initialized");
     
     return true;
   } catch (error) {
     console.error("Failed to initialize RAG:", error);
-    return false;
+    vectorStore = null;
+    throw error;
   }
 }
 
@@ -34,8 +51,14 @@ export async function queryRAG(query: string, k: number = 3) {
     throw new Error("RAG system not initialized. Call initializeRAG first.");
   }
   
+  if (!query || query.trim().length === 0) {
+    throw new Error("Query cannot be empty");
+  }
+  
   try {
+    console.log(`Querying RAG system with: "${query}"`);
     const results = await vectorStore.similaritySearch(query, k);
+    console.log(`Found ${results.length} relevant documents`);
     return results;
   } catch (error) {
     console.error("Error querying RAG:", error);

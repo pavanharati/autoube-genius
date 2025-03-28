@@ -1,102 +1,121 @@
+
 import { useState } from "react";
-import { FileText, Plus, RefreshCw } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Sparkles } from "lucide-react";
+import { DocumentUploader } from "@/components/rag/DocumentUploader";
 
 const Scripts = () => {
-  const [selectedScript, setSelectedScript] = useState<string | null>(null);
-  
-  // Mock scripts data (in a real app, this would come from an API)
+  // Sample scripts data
   const scripts = [
     {
-      id: "1",
-      title: "AI in Daily Life",
-      excerpt: "Exploring how artificial intelligence is transforming our everyday activities...",
-      status: "Draft",
-      lastModified: "2024-02-20",
+      id: "script-1",
+      title: "How AI is Changing Content Creation",
+      preview: "In this video, we'll explore how artificial intelligence is revolutionizing content creation...",
+      createdAt: "2024-02-15",
+      wordCount: 850,
     },
     {
-      id: "2",
-      title: "Future of Work",
-      excerpt: "Analyzing the evolving landscape of remote work and digital transformation...",
-      status: "Complete",
-      lastModified: "2024-02-19",
+      id: "script-2",
+      title: "10 Tips for Better YouTube Videos",
+      preview: "Want to improve your YouTube videos? In this guide, we'll cover 10 essential tips...",
+      createdAt: "2024-02-10",
+      wordCount: 1250,
+    },
+    {
+      id: "script-3",
+      title: "The Future of Remote Work",
+      preview: "Remote work is here to stay. In this video, we'll discuss the future trends and how...",
+      createdAt: "2024-02-05",
+      wordCount: 925,
     },
   ];
 
+  const [activeScript, setActiveScript] = useState<string | null>(null);
+
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-4xl font-bold">Scripts</h1>
-          <p className="text-muted-foreground mt-2">
-            Create and manage your video scripts
-          </p>
-        </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          New Script
-        </Button>
+      <div>
+        <h1 className="text-4xl font-bold">Scripts</h1>
+        <p className="text-muted-foreground mt-2">
+          Create, manage and generate your video scripts
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Scripts List */}
-        <div className="lg:col-span-1 space-y-4">
-          {scripts.map((script) => (
-            <Card 
-              key={script.id}
-              className={`cursor-pointer transition-colors hover:bg-accent hover:text-accent-foreground
-                ${selectedScript === script.id ? 'border-accent' : ''}`}
-              onClick={() => setSelectedScript(script.id)}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg">{script.title}</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Last modified: {script.lastModified}
-                    </p>
+        {/* Left sidebar - Scripts list */}
+        <div className="space-y-4">
+          <Button className="w-full gap-2">
+            <Sparkles className="w-4 h-4" />
+            Create New Script
+          </Button>
+
+          <div className="space-y-2">
+            {scripts.map((script) => (
+              <Card 
+                key={script.id} 
+                className={`cursor-pointer hover:bg-accent/50 transition-colors ${activeScript === script.id ? 'border-primary' : ''}`}
+                onClick={() => setActiveScript(script.id)}
+              >
+                <CardContent className="p-4">
+                  <h3 className="font-medium text-md">{script.title}</h3>
+                  <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                    <span>{script.createdAt}</span>
+                    <span>{script.wordCount} words</span>
                   </div>
-                  <span className={`text-sm px-2 py-1 rounded-full 
-                    ${script.status === 'Complete' ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
-                    {script.status}
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {script.excerpt}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
 
-        {/* Script Editor */}
-        <div className="lg:col-span-2">
-          <Card className="h-full">
+        {/* Right section - Script editor and knowledge base */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Script editor/viewer */}
+          <Card className="h-[500px] flex flex-col">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Script Editor</CardTitle>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <RefreshCw className="h-4 w-4" />
-                    Generate
-                  </Button>
-                  <Button size="sm">Save</Button>
-                </div>
-              </div>
+              <CardTitle>Script Editor</CardTitle>
+              <CardDescription>
+                Write or generate your script content
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Textarea 
-                className="min-h-[500px] resize-none"
-                placeholder="Start writing your script here..."
-                value={selectedScript ? scripts.find(s => s.id === selectedScript)?.excerpt : ""}
-                onChange={(e) => {/* Handle script changes */}}
-              />
+            <CardContent className="flex-grow">
+              {activeScript ? (
+                <div className="h-full border rounded-md p-4">
+                  {scripts.find(s => s.id === activeScript)?.preview}
+                </div>
+              ) : (
+                <div className="h-full flex items-center justify-center text-muted-foreground">
+                  Select a script or create a new one
+                </div>
+              )}
             </CardContent>
           </Card>
+          
+          {/* Knowledge base section */}
+          <Tabs defaultValue="documents">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="documents">Knowledge Base</TabsTrigger>
+              <TabsTrigger value="settings">Script Settings</TabsTrigger>
+            </TabsList>
+            <TabsContent value="documents">
+              <DocumentUploader />
+            </TabsContent>
+            <TabsContent value="settings">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Script Settings</CardTitle>
+                  <CardDescription>
+                    Customize your script generation preferences
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p>Script settings will be available soon.</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
