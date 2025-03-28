@@ -21,9 +21,41 @@ export type VideoGenerationOptions = {
 };
 
 export type TrendingTopic = {
-  title: string;
-  category: string;
-  trendingScore: number;
-  period: "day" | "week" | "month";
+  title?: string;
+  topic: string;
+  category?: string;
+  trendingScore?: number;
+  period?: "day" | "week" | "month";
   searchVolume: string;
+  trend: string;
+  engagement: string;
+  relatedTopics: string[];
+};
+
+export type GeneratedScript = {
+  id: string;
+  topic: string;
+  content: string;
+  createdAt: string;
+  videoGenerated?: boolean;
+};
+
+export type GeneratedVideo = {
+  id: string;
+  title: string;
+  thumbnail: string;
+  videoUrl: string;
+  captions?: string;
+  scriptId?: string;
+  createdAt: string;
+  status: "Processing" | "Ready" | "Published";
+  style: VideoGenerationOptions["style"];
+};
+
+export type ThumbnailOptions = {
+  title: string;
+  style: "modern" | "minimal" | "bold" | "playful";
+  textColor?: string;
+  backgroundColor?: string;
+  imagePrompt?: string;
 };

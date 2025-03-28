@@ -1,11 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { type Video } from "@/types/video";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Edit, Play, Trash2, Video as VideoIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 interface VideoDetailsProps {
   video: Video | undefined;
@@ -14,6 +15,14 @@ interface VideoDetailsProps {
 const VideoDetails = ({ video }: VideoDetailsProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [captionsEnabled, setCaptionsEnabled] = useState(true);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const { toast } = useToast();
+
+  // Reset video state when video changes
+  useEffect(() => {
+    setIsPlaying(false);
+    setVideoLoaded(false);
+  }, [video?.id]);
 
   const getStatusColor = (status: Video["status"]) => {
     switch (status) {
@@ -26,6 +35,28 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
       default:
         return "bg-gray-500/10 text-gray-500";
     }
+  };
+
+  const handlePlayVideo = () => {
+    setIsPlaying(true);
+  };
+
+  const handleToggleCaptions = (checked: boolean) => {
+    setCaptionsEnabled(checked);
+    toast({
+      title: checked ? "Captions enabled" : "Captions disabled",
+      description: checked ? "Video captions are now showing" : "Video captions are now hidden",
+    });
+  };
+
+  const getVideoUrl = (video: Video) => {
+    if (video.videoUrl) return video.videoUrl;
+    
+    // Fallback to sample videos if no video URL is provided
+    return `https://storage.googleapis.com/gtv-videos-bucket/sample/${
+      video.id === "1" ? "ForBiggerBlazes" : 
+      video.id === "2" ? "ElephantsDream" : 
+      "BigBuckBunny"}.mp4`;
   };
 
   if (!video) {
@@ -64,11 +95,20 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
             {isPlaying ? (
               <div className="relative">
                 <video 
-                  src={video.videoUrl || `https://storage.googleapis.com/gtv-videos-bucket/sample/${video.id === "1" ? "ForBiggerBlazes" : video.id === "2" ? "ElephantsDream" : "BigBuckBunny"}.mp4`}
+                  src={getVideoUrl(video)}
                   className="w-full h-full object-cover"
                   controls
                   autoPlay
                   onEnded={() => setIsPlaying(false)}
+                  onLoadedData={() => setVideoLoaded(true)}
+                  onError={() => {
+                    toast({
+                      title: "Video Error",
+                      description: "There was an error loading this video. Please try again.",
+                      variant: "destructive",
+                    });
+                    setIsPlaying(false);
+                  }}
                 >
                   {captionsEnabled && video.captions && (
                     <track 
@@ -80,14 +120,16 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
                     />
                   )}
                 </video>
-                <div className="absolute bottom-16 right-4 flex items-center gap-2 bg-black/70 text-white p-2 rounded-md">
-                  <Label htmlFor="captions-toggle" className="text-xs">Captions</Label>
-                  <Switch 
-                    id="captions-toggle"
-                    checked={captionsEnabled}
-                    onCheckedChange={setCaptionsEnabled}
-                  />
-                </div>
+                {videoLoaded && (
+                  <div className="absolute bottom-16 right-4 flex items-center gap-2 bg-black/70 text-white p-2 rounded-md">
+                    <Label htmlFor="captions-toggle" className="text-xs">Captions</Label>
+                    <Switch 
+                      id="captions-toggle"
+                      checked={captionsEnabled}
+                      onCheckedChange={handleToggleCaptions}
+                    />
+                  </div>
+                )}
               </div>
             ) : (
               <div className="relative group">
@@ -101,7 +143,7 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
                     variant="outline" 
                     size="lg" 
                     className="gap-2"
-                    onClick={() => setIsPlaying(true)}
+                    onClick={handlePlayVideo}
                   >
                     <Play className="h-5 w-5" />
                     Play Video
