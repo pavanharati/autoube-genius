@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { TrendingUp, FileText, ArrowLeft } from "lucide-react";
 import { SearchBar } from "@/components/topics/SearchBar";
@@ -8,6 +7,7 @@ import { fetchTrendingTopics, getTopicInsights, TrendingTopic } from "@/utils/ap
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { generateScript } from "@/utils/api/openai";
+import { useRAG } from "@/hooks/useRAG";
 
 const TopicResearch = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -22,10 +22,29 @@ const TopicResearch = () => {
   const [script, setScript] = useState("");
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
   const { toast } = useToast();
+  const { initialize } = useRAG();
 
   useEffect(() => {
     loadTrendingTopics();
   }, []);
+
+  useEffect(() => {
+    if (trendingTopics.length > 0) {
+      const documents = trendingTopics.map(topic => ({
+        text: `Topic: ${topic.topic}\nTrend: ${topic.trend}\nEngagement: ${topic.engagement}\nRelated Topics: ${topic.relatedTopics?.join(", ")}`,
+        metadata: { source: "trending-topics" }
+      }));
+      
+      initialize(documents).catch(err => {
+        console.error("Failed to initialize RAG:", err);
+        toast({
+          title: "Error",
+          description: "Failed to initialize RAG",
+          variant: "destructive",
+        });
+      });
+    }
+  }, [trendingTopics]);
 
   const loadTrendingTopics = async () => {
     setIsLoading(true);
@@ -93,7 +112,6 @@ const TopicResearch = () => {
     setScript("");
   };
 
-  // Filter topics based on search query
   const filteredTopics = searchQuery 
     ? trendingTopics.filter(topic => 
         topic.topic.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -128,7 +146,13 @@ const TopicResearch = () => {
                     onClick={() => handleTopicSelect(topic)}
                     className="cursor-pointer transition-transform hover:scale-[1.02]"
                   >
-                    <TrendingTopicCard topic={topic} />
+                    <TrendingTopicCard 
+                      topic={topic} 
+                      onGenerateScript={(generatedScript) => {
+                        setSelectedTopic(topic);
+                        setScript(generatedScript);
+                      }} 
+                    />
                   </div>
                 ))}
               </div>

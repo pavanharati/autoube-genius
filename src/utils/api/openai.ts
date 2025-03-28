@@ -5,6 +5,7 @@ export interface ScriptGenerationParams {
   topic: string;
   style?: 'informative' | 'entertaining' | 'educational';
   targetLength?: 'short' | 'medium' | 'long';
+  additionalContext?: string; // New parameter for RAG context
 }
 
 export const generateScript = async (params: ScriptGenerationParams): Promise<string> => {
@@ -20,6 +21,12 @@ export const generateScript = async (params: ScriptGenerationParams): Promise<st
     } else {
       // Fallback to using the OpenAI API directly
       const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
+      
+      // Create the system message with additional context if provided
+      const systemMessage = params.additionalContext 
+        ? `You are a professional YouTube script writer. Use the following context to help create your script:\n\n${params.additionalContext}`
+        : 'You are a professional YouTube script writer.';
+      
       const response = await fetch(OPENAI_API_ENDPOINT, {
         method: 'POST',
         headers: {
@@ -31,7 +38,7 @@ export const generateScript = async (params: ScriptGenerationParams): Promise<st
           messages: [
             {
               role: 'system',
-              content: 'You are a professional YouTube script writer.'
+              content: systemMessage
             },
             {
               role: 'user',
