@@ -7,7 +7,18 @@ import { generateScript } from "@/utils/api/openai";
 import { useRAG } from "@/hooks/useRAG";
 import { useGoogleTrends } from "@/hooks/useGoogleTrends";
 import { generateVideo } from "@/utils/api/videoGenerator";
+import { generateThumbnail } from "@/utils/api/canva";
 import { useNavigate } from "react-router-dom";
+
+export interface SavedScript {
+  id: string;
+  topic: string;
+  content: string;
+  date: string;
+  videoGenerated?: boolean;
+  videoUrl?: string;
+  thumbnailUrl?: string;
+}
 
 export const useTopicResearch = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -18,14 +29,15 @@ export const useTopicResearch = () => {
     relatedQueries: string[];
   } | null>(null);
   const [script, setScript] = useState("");
-  const [savedScripts, setSavedScripts] = useState<{topic: string, content: string, date: string}[]>([]);
+  const [savedScripts, setSavedScripts] = useState<SavedScript[]>([]);
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('day');
+  const [selectedRegion, setSelectedRegion] = useState<string>('US');
   const { toast } = useToast();
   const { initialize } = useRAG();
   const navigate = useNavigate();
   
-  const { data: trendingTopics = [], isLoading } = useGoogleTrends(undefined, selectedPeriod);
+  const { data: trendingTopics = [], isLoading } = useGoogleTrends(undefined, selectedPeriod, selectedRegion);
 
   useEffect(() => {
     // Load saved scripts from localStorage
@@ -43,7 +55,7 @@ export const useTopicResearch = () => {
     if (trendingTopics.length > 0) {
       const documents = trendingTopics.map(topic => ({
         text: `Topic: ${topic.topic}\nTrend: ${topic.trend}\nEngagement: ${topic.engagement}\nRelated Topics: ${topic.relatedTopics?.join(", ")}`,
-        metadata: { source: "trending-topics", period: topic.period || 'day' }
+        metadata: { source: "trending-topics", period: topic.period || 'day', region: topic.region || 'US' }
       }));
       
       initialize(documents).catch(err => {
@@ -103,10 +115,12 @@ export const useTopicResearch = () => {
   const handleSaveScript = () => {
     if (!selectedTopic || !script) return;
     
-    const newSavedScript = {
+    const newSavedScript: SavedScript = {
+      id: crypto.randomUUID(),
       topic: selectedTopic.topic,
       content: script,
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
+      videoGenerated: false
     };
     
     const updatedScripts = [...savedScripts, newSavedScript];
@@ -117,7 +131,7 @@ export const useTopicResearch = () => {
     
     toast({
       title: "Script Saved",
-      description: "Your script has been saved successfully",
+      description: "Your script has been saved successfully and added to your dashboard",
     });
   };
 
@@ -125,14 +139,40 @@ export const useTopicResearch = () => {
     try {
       toast({
         title: "Processing",
-        description: "Generating your video. This may take a few moments...",
+        description: "Generating your video and thumbnail. This may take a few moments...",
       });
 
+      // Generate thumbnail with a catchy title
+      const thumbnailUrl = await generateThumbnail({
+        title: title,
+        imagePrompt: `Thumbnail for a video about ${title}`,
+        style: 'modern'
+      });
+
+      // Generate the video
       const result = await generateVideo(title, script, options);
+      
+      // Update the saved script to mark as video generated
+      if (selectedTopic) {
+        const updatedScripts = savedScripts.map(savedScript => {
+          if (savedScript.topic === selectedTopic.topic && savedScript.content === script) {
+            return {
+              ...savedScript,
+              videoGenerated: true,
+              videoUrl: result.videoUrl,
+              thumbnailUrl
+            };
+          }
+          return savedScript;
+        });
+        
+        setSavedScripts(updatedScripts);
+        localStorage.setItem('saved-scripts', JSON.stringify(updatedScripts));
+      }
       
       toast({
         title: "Success",
-        description: "Video generated successfully! Redirecting to Videos page.",
+        description: "Video and thumbnail generated successfully! Redirecting to Videos page.",
       });
 
       // Wait a moment before redirecting to allow the toast to be seen
@@ -172,8 +212,11 @@ export const useTopicResearch = () => {
     isGeneratingScript,
     selectedPeriod,
     setSelectedPeriod,
+    selectedRegion,
+    setSelectedRegion,
     trendingTopics,
     isLoading,
+    savedScripts,
     handleTopicSelect,
     handleGenerateScript,
     handleSaveScript,

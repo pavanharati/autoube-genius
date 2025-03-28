@@ -14,9 +14,9 @@ serve(async (req) => {
   }
 
   try {
-    const { category, period } = await req.json()
+    const { category, period, region = 'US' } = await req.json()
     
-    console.log(`Fetching trends for category: ${category}, period: ${period || 'day'}`)
+    console.log(`Fetching trends for category: ${category}, period: ${period || 'day'}, region: ${region}`)
     
     // Different time ranges based on period parameter
     const timeRange = period === 'month' ? 'today 1-m' : 
@@ -25,20 +25,20 @@ serve(async (req) => {
 
     // Get daily trending searches
     const dailyTrends = await googleTrends.dailyTrends({
-      geo: 'US',
+      geo: region,
       timezone: -240, // EST timezone
     })
     
     // Get real-time trends
     const realtimeTrends = await googleTrends.realTimeTrends({
-      geo: 'US',
+      geo: region,
       category: category || 'all',
     })
     
     // Get related topics based on category or a default query
     const relatedTopics = await googleTrends.relatedTopics({
       keyword: category || 'content creation',
-      geo: 'US',
+      geo: region,
       hl: 'en-US',
       timezone: -240,
       time: timeRange,
@@ -47,7 +47,7 @@ serve(async (req) => {
     // Get interest over time for content creation topics
     const interestOverTime = await googleTrends.interestOverTime({
       keyword: ['YouTube', 'TikTok', 'Instagram Reels'],
-      geo: 'US',
+      geo: region,
       time: timeRange,
     })
 
@@ -61,6 +61,7 @@ serve(async (req) => {
         interest: JSON.parse(interestOverTime),
         timestamp: new Date().toISOString(),
         period: period || 'day',
+        region: region,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
