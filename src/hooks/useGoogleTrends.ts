@@ -12,8 +12,11 @@ export const useGoogleTrends = (category?: string, period?: 'day' | 'week' | 'mo
               period === 'week' ? 1000 * 60 * 60 * 2 : // 2 hours for weekly trends
               1000 * 60 * 60 * 6, // 6 hours for monthly trends
     retry: 2,
-    onError: (error) => {
-      console.error("Failed to fetch Google Trends:", error);
+    // Using onSettled instead of onError
+    onSettled: (data, error) => {
+      if (error) {
+        console.error("Failed to fetch Google Trends:", error);
+      }
     }
   })
 }

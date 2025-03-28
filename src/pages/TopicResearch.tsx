@@ -56,7 +56,7 @@ const TopicResearch = () => {
       </div>
 
       {showRagError && (
-        <Alert variant="warning">
+        <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>RAG Initialization Issue</AlertTitle>
           <AlertDescription>
