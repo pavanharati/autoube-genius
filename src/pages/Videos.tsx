@@ -6,7 +6,6 @@ import VideoList from "@/components/videos/VideoList";
 import VideoDetails from "@/components/videos/VideoDetails";
 import VideoGenerator from "@/components/videos/VideoGenerator";
 import { Video, VideoGenerationOptions } from "@/types/video";
-import { generateVideo } from "@/utils/api/videoGenerator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -128,7 +127,7 @@ const Videos = () => {
               <DialogHeader>
                 <DialogTitle>Create New Video</DialogTitle>
               </DialogHeader>
-              <VideoGenerator onGenerate={handleGenerateVideo} />
+              <VideoGenerator onGenerate={handleGenerateVideo} isGenerating={isGenerating} />
             </DialogContent>
           </Dialog>
         </div>
@@ -144,23 +143,70 @@ const Videos = () => {
           <TabsTrigger value="published">Published</TabsTrigger>
           <TabsTrigger value="processing">Processing</TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="all">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Videos List */}
+            <div className="lg:col-span-1">
+              <VideoList 
+                videos={videos}
+                selectedVideo={selectedVideo}
+                onSelectVideo={setSelectedVideo}
+              />
+            </div>
+
+            {/* Video Details */}
+            <div className="lg:col-span-2">
+              <VideoDetails video={videos.find(v => v.id === selectedVideo)} />
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="trending">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+              <VideoList 
+                videos={videos.filter(v => v.trending)}
+                selectedVideo={selectedVideo}
+                onSelectVideo={setSelectedVideo}
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <VideoDetails video={videos.find(v => v.id === selectedVideo)} />
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="published">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+              <VideoList 
+                videos={videos.filter(v => v.status === "Published")}
+                selectedVideo={selectedVideo}
+                onSelectVideo={setSelectedVideo}
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <VideoDetails video={videos.find(v => v.id === selectedVideo)} />
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="processing">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+              <VideoList 
+                videos={videos.filter(v => v.status === "Processing")}
+                selectedVideo={selectedVideo}
+                onSelectVideo={setSelectedVideo}
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <VideoDetails video={videos.find(v => v.id === selectedVideo)} />
+            </div>
+          </div>
+        </TabsContent>
       </Tabs>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Videos List */}
-        <div className="lg:col-span-1">
-          <VideoList 
-            videos={videos}
-            selectedVideo={selectedVideo}
-            onSelectVideo={setSelectedVideo}
-          />
-        </div>
-
-        {/* Video Details */}
-        <div className="lg:col-span-2">
-          <VideoDetails video={videos.find(v => v.id === selectedVideo)} />
-        </div>
-      </div>
     </div>
   );
 };

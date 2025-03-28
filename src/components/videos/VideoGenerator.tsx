@@ -11,19 +11,22 @@ import { Switch } from "@/components/ui/switch";
 import { Wand2, Music, Video, Lightbulb, FileText } from "lucide-react";
 import { VideoGenerationOptions } from "@/types/video";
 import { Slider } from "@/components/ui/slider";
-import { useToast } from "@/hooks/use-toast";
 
 interface VideoGeneratorProps {
   onGenerate: (title: string, script: string, options: VideoGenerationOptions) => Promise<void>;
   initialScript?: string;
   initialTitle?: string;
+  isGenerating?: boolean;
 }
 
-const VideoGenerator = ({ onGenerate, initialScript = "", initialTitle = "" }: VideoGeneratorProps) => {
+const VideoGenerator = ({ 
+  onGenerate, 
+  initialScript = "", 
+  initialTitle = "", 
+  isGenerating = false 
+}: VideoGeneratorProps) => {
   const [title, setTitle] = useState(initialTitle);
   const [script, setScript] = useState(initialScript);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const { toast } = useToast();
   
   const [options, setOptions] = useState<VideoGenerationOptions>({
     style: "ai-generated",
@@ -34,39 +37,20 @@ const VideoGenerator = ({ onGenerate, initialScript = "", initialTitle = "" }: V
 
   const handleGenerate = async () => {
     if (!title.trim()) {
-      toast({
-        title: "Missing title",
-        description: "Please enter a video title",
-        variant: "destructive",
-      });
+      alert("Please enter a video title");
       return;
     }
     
     if (!script.trim()) {
-      toast({
-        title: "Missing script",
-        description: "Please enter a video script",
-        variant: "destructive",
-      });
+      alert("Please enter a video script");
       return;
     }
     
-    setIsGenerating(true);
     try {
       await onGenerate(title, script, options);
-      toast({
-        title: "Video generation started",
-        description: "Your video is being generated. This may take a few minutes.",
-      });
     } catch (error) {
       console.error("Error generating video:", error);
-      toast({
-        title: "Error",
-        description: "Failed to generate video. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGenerating(false);
+      alert("Failed to generate video. Please try again.");
     }
   };
 
@@ -120,10 +104,7 @@ const VideoGenerator = ({ onGenerate, initialScript = "", initialTitle = "" }: V
               <Button 
                 variant="outline" 
                 onClick={() => {
-                  toast({
-                    title: "Tips for great scripts",
-                    description: "Start with a strong hook, present a problem, offer a solution, and show the results. Keep it engaging!",
-                  });
+                  alert("Tips for great scripts: Start with a strong hook, present a problem, offer a solution, and show the results. Keep it engaging!");
                 }}
                 className="gap-2"
               >

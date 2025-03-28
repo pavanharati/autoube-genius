@@ -3,7 +3,7 @@ import { useState } from "react";
 import { type Video } from "@/types/video";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit, Play, Trash2, Video as VideoIcon, Captions } from "lucide-react";
+import { Edit, Play, Trash2, Video as VideoIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
