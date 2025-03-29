@@ -13,10 +13,8 @@ export const useGoogleTrends = (category?: string, period?: 'day' | 'week' | 'mo
               1000 * 60 * 60 * 6, // 6 hours for monthly trends
     retry: 2,
     gcTime: 1000 * 60 * 60, // 1 hour
-    meta: {
-      onError: (error: Error) => {
-        console.error("Failed to fetch Google Trends:", error);
-      }
+    onError: (error: Error) => {
+      console.error("Failed to fetch Google Trends:", error);
     }
   })
 }
