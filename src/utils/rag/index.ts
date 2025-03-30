@@ -13,9 +13,10 @@ export async function initializeRAG(documents: Array<{text: string, metadata?: R
     throw new Error("No documents provided for RAG initialization");
   }
 
-  if (!import.meta.env.VITE_OPENAI_API_KEY) {
-    console.error("OpenAI API key is missing");
-    throw new Error("OpenAI API key is missing. Please add it in your environment variables.");
+  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+  if (!apiKey) {
+    console.warn("OpenAI API key is missing - RAG will be disabled");
+    return false;
   }
   
   try {
@@ -30,7 +31,7 @@ export async function initializeRAG(documents: Array<{text: string, metadata?: R
     
     // Use OpenAI embeddings (requires API key)
     const embeddings = new OpenAIEmbeddings({
-      openAIApiKey: import.meta.env.VITE_OPENAI_API_KEY,
+      openAIApiKey: apiKey,
     });
     
     // Create a simple in-memory vector store
@@ -41,7 +42,7 @@ export async function initializeRAG(documents: Array<{text: string, metadata?: R
   } catch (error) {
     console.error("Failed to initialize RAG:", error);
     vectorStore = null;
-    throw error;
+    return false;
   }
 }
 
