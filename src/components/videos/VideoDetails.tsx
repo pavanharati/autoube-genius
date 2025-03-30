@@ -49,14 +49,15 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
     });
   };
 
-  const getVideoUrl = (video: Video) => {
-    if (video.videoUrl) return video.videoUrl;
-    
-    // Fallback to sample videos if no video URL is provided
-    return `https://storage.googleapis.com/gtv-videos-bucket/sample/${
-      video.id === "1" ? "ForBiggerBlazes" : 
-      video.id === "2" ? "ElephantsDream" : 
-      "BigBuckBunny"}.mp4`;
+  // Only use the video URL if it's a valid URL
+  const isValidUrl = (url?: string) => {
+    if (!url) return false;
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   if (!video) {
@@ -94,33 +95,39 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
           <div className="aspect-video rounded-lg overflow-hidden bg-card relative">
             {isPlaying ? (
               <div className="relative">
-                <video 
-                  src={getVideoUrl(video)}
-                  className="w-full h-full object-cover"
-                  controls
-                  autoPlay
-                  onEnded={() => setIsPlaying(false)}
-                  onLoadedData={() => setVideoLoaded(true)}
-                  onError={() => {
-                    toast({
-                      title: "Video Error",
-                      description: "There was an error loading this video. Please try again.",
-                      variant: "destructive",
-                    });
-                    setIsPlaying(false);
-                  }}
-                >
-                  {captionsEnabled && video.captions && (
-                    <track 
-                      kind="subtitles" 
-                      src={video.captions} 
-                      label="English" 
-                      srcLang="en" 
-                      default 
-                    />
-                  )}
-                </video>
-                {videoLoaded && (
+                {isValidUrl(video.videoUrl) ? (
+                  <video 
+                    src={video.videoUrl}
+                    className="w-full h-full object-cover"
+                    controls
+                    autoPlay
+                    onEnded={() => setIsPlaying(false)}
+                    onLoadedData={() => setVideoLoaded(true)}
+                    onError={() => {
+                      toast({
+                        title: "Video Error",
+                        description: "There was an error loading this video. Please try again.",
+                        variant: "destructive",
+                      });
+                      setIsPlaying(false);
+                    }}
+                  >
+                    {captionsEnabled && isValidUrl(video.captions) && (
+                      <track 
+                        kind="subtitles" 
+                        src={video.captions} 
+                        label="English" 
+                        srcLang="en" 
+                        default 
+                      />
+                    )}
+                  </video>
+                ) : (
+                  <div className="flex items-center justify-center h-64 bg-muted">
+                    <p className="text-muted-foreground">No video available</p>
+                  </div>
+                )}
+                {videoLoaded && isValidUrl(video.captions) && (
                   <div className="absolute bottom-16 right-4 flex items-center gap-2 bg-black/70 text-white p-2 rounded-md">
                     <Label htmlFor="captions-toggle" className="text-xs">Captions</Label>
                     <Switch 
@@ -133,25 +140,34 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
               </div>
             ) : (
               <div className="relative group">
-                <img 
-                  src={video.thumbnail}
-                  alt="Video thumbnail"
-                  className="w-full h-full object-cover"
-                />
+                {isValidUrl(video.thumbnail) ? (
+                  <img 
+                    src={video.thumbnail}
+                    alt="Video thumbnail"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-64 bg-muted">
+                    <VideoIcon className="h-12 w-12 opacity-50" />
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Button 
-                    variant="outline" 
-                    size="lg" 
-                    className="gap-2"
-                    onClick={handlePlayVideo}
-                  >
-                    <Play className="h-5 w-5" />
-                    Play Video
-                  </Button>
+                  {isValidUrl(video.videoUrl) && (
+                    <Button 
+                      variant="outline" 
+                      size="lg" 
+                      className="gap-2"
+                      onClick={handlePlayVideo}
+                    >
+                      <Play className="h-5 w-5" />
+                      Play Video
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
           </div>
+          
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <h3 className="font-semibold mb-1">Title</h3>
