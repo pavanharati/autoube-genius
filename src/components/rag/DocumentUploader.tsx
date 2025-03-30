@@ -10,6 +10,7 @@ import { FileText, Upload, X } from "lucide-react";
 export function DocumentUploader() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [apiKey, setApiKey] = useState("");
   const { initialize, isInitialized, isLoading } = useRAG();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,7 +45,7 @@ export function DocumentUploader() {
 
   const handleInitialize = async () => {
     if (documents.length === 0) return;
-    await initialize(documents);
+    await initialize(documents, apiKey || undefined);
   };
 
   const removeDocument = (index: number) => {
@@ -93,6 +94,21 @@ export function DocumentUploader() {
           <div className="bg-green-500/10 border border-green-500/30 rounded-md p-4 text-center">
             <p className="text-green-600 dark:text-green-400">
               Knowledge base initialized with {documents.length} documents
+            </p>
+          </div>
+        )}
+
+        {!isInitialized && (
+          <div className="space-y-2">
+            <Input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="OpenAI API Key (optional)"
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Provide API key for better RAG functionality
             </p>
           </div>
         )}

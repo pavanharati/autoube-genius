@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { TrendingTopic, VideoGenerationOptions } from "@/types/video";
@@ -40,7 +39,6 @@ export const useTopicResearch = () => {
   const { data: trendingTopics = [], isLoading } = useGoogleTrends(undefined, selectedPeriod, selectedRegion);
 
   useEffect(() => {
-    // Load saved scripts from localStorage
     const savedScriptsFromStorage = localStorage.getItem('saved-scripts');
     if (savedScriptsFromStorage) {
       try {
@@ -60,14 +58,41 @@ export const useTopicResearch = () => {
       
       initialize(documents).catch(err => {
         console.error("Failed to initialize RAG:", err);
-        toast({
-          title: "RAG Initialization",
-          description: "Using fallback search methods instead of RAG",
-          variant: "default",
-        });
       });
     }
   }, [trendingTopics, initialize, toast]);
+
+  const initializeRagWithKey = async (apiKey: string) => {
+    if (trendingTopics.length > 0) {
+      const documents = trendingTopics.map(topic => ({
+        text: `Topic: ${topic.topic}\nTrend: ${topic.trend}\nEngagement: ${topic.engagement}\nRelated Topics: ${topic.relatedTopics?.join(", ")}`,
+        metadata: { source: "trending-topics", period: topic.period || 'day', region: topic.region || 'US' }
+      }));
+      
+      try {
+        const success = await initialize(documents, apiKey);
+        if (success) {
+          toast({
+            title: "RAG System Initialized",
+            description: "Knowledge base successfully created with your API key",
+          });
+        } else {
+          toast({
+            title: "RAG Initialization Failed",
+            description: "Could not initialize RAG with the provided API key",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Failed to initialize RAG with API key:", error);
+        toast({
+          title: "Error",
+          description: "Something went wrong during RAG initialization",
+          variant: "destructive",
+        });
+      }
+    }
+  };
 
   const handleTopicSelect = async (topic: TrendingTopic) => {
     setSelectedTopic(topic);
@@ -126,7 +151,6 @@ export const useTopicResearch = () => {
     const updatedScripts = [...savedScripts, newSavedScript];
     setSavedScripts(updatedScripts);
     
-    // Save to localStorage
     localStorage.setItem('saved-scripts', JSON.stringify(updatedScripts));
     
     toast({
@@ -142,17 +166,14 @@ export const useTopicResearch = () => {
         description: "Generating your video and thumbnail. This may take a few moments...",
       });
 
-      // Generate thumbnail with a catchy title
       const thumbnailUrl = await generateThumbnail({
         title: title,
         imagePrompt: `Thumbnail for a video about ${title}`,
         style: 'modern'
       });
 
-      // Generate the video
       const result = await generateVideo(title, script, options);
       
-      // Update the saved script to mark as video generated
       if (selectedTopic) {
         const updatedScripts = savedScripts.map(savedScript => {
           if (savedScript.topic === selectedTopic.topic && savedScript.content === script) {
@@ -175,7 +196,6 @@ export const useTopicResearch = () => {
         description: "Video and thumbnail generated successfully! Redirecting to Videos page.",
       });
 
-      // Wait a moment before redirecting to allow the toast to be seen
       setTimeout(() => {
         navigate("/videos");
       }, 2000);
@@ -222,6 +242,7 @@ export const useTopicResearch = () => {
     handleSaveScript,
     handleCreateVideo,
     backToTopics,
-    setTopicAndScript
+    setTopicAndScript,
+    initializeRagWithKey
   };
 };

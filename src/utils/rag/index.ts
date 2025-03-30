@@ -7,13 +7,15 @@ import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 let vectorStore: MemoryVectorStore | null = null;
 
 // Initialize the vector store with documents
-export async function initializeRAG(documents: Array<{text: string, metadata?: Record<string, any>}>) {
+export async function initializeRAG(documents: Array<{text: string, metadata?: Record<string, any>}>, apiKeyOverride?: string) {
   if (!documents || documents.length === 0) {
     console.error("No documents provided for RAG initialization");
     throw new Error("No documents provided for RAG initialization");
   }
 
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+  // Check for API key (either from environment or passed directly)
+  const apiKey = apiKeyOverride || import.meta.env.VITE_OPENAI_API_KEY;
+  
   if (!apiKey) {
     console.warn("OpenAI API key is missing - RAG will be disabled");
     return false;

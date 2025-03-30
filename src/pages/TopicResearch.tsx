@@ -6,9 +6,11 @@ import { useTopicResearch } from "@/hooks/useTopicResearch";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { DocumentUploader } from "@/components/rag/DocumentUploader";
 
 const TopicResearch = () => {
   const [showRagError, setShowRagError] = useState(false);
+  const [apiKey, setApiKey] = useState<string | null>(null);
   
   const {
     searchQuery,
@@ -27,7 +29,8 @@ const TopicResearch = () => {
     handleSaveScript,
     handleCreateVideo,
     backToTopics,
-    setTopicAndScript
+    setTopicAndScript,
+    initializeRagWithKey
   } = useTopicResearch();
 
   // Check console for RAG initialization errors
@@ -46,6 +49,15 @@ const TopicResearch = () => {
     };
   }, []);
 
+  const handleApiKeySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (apiKey && apiKey.trim()) {
+      initializeRagWithKey(apiKey.trim());
+      setShowRagError(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -59,16 +71,39 @@ const TopicResearch = () => {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>RAG Initialization Issue</AlertTitle>
-          <AlertDescription>
-            We've detected an issue with the Retrieval-Augmented Generation system.
-            Using fallback search methods for now. Your experience won't be affected.
+          <AlertDescription className="space-y-4">
+            <p>We've detected an issue with the Retrieval-Augmented Generation system.
+            Using fallback search methods for now.</p>
+            
+            <form onSubmit={handleApiKeySubmit} className="flex gap-2">
+              <input
+                type="password"
+                value={apiKey || ''}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="Enter OpenAI API Key"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+              <button 
+                type="submit"
+                className="bg-primary text-primary-foreground h-10 px-4 py-2 rounded-md text-sm font-medium"
+              >
+                Apply
+              </button>
+            </form>
           </AlertDescription>
         </Alert>
       )}
 
       {!selectedTopic ? (
         <>
-          <SearchBar value={searchQuery} onChange={setSearchQuery} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-2">
+              <SearchBar value={searchQuery} onChange={setSearchQuery} />
+            </div>
+            <div>
+              <DocumentUploader />
+            </div>
+          </div>
 
           <TrendingTopicsTabs
             trendingTopics={trendingTopics}

@@ -14,7 +14,7 @@ export const useRAG = () => {
   const { toast } = useToast();
   
   // Initialize the RAG system with documents
-  const initialize = useCallback(async (documents: Document[]) => {
+  const initialize = useCallback(async (documents: Document[], apiKey?: string) => {
     if (!documents.length) {
       toast({
         title: "No documents provided",
@@ -26,7 +26,8 @@ export const useRAG = () => {
     
     setIsLoading(true);
     try {
-      const success = await initializeRAG(documents);
+      // Pass the API key to initializeRAG if provided
+      const success = await initializeRAG(documents, apiKey);
       setIsInitialized(success);
       
       if (success) {
