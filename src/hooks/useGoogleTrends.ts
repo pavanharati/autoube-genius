@@ -6,15 +6,17 @@ export const useGoogleTrends = (category?: string, period?: 'day' | 'week' | 'mo
   return useQuery({
     queryKey: ["google-trends", category, period, region],
     queryFn: async (): Promise<TrendingTopic[]> => {
-      return fetchTrendingTopics(category, period, region);
+      try {
+        return await fetchTrendingTopics(category, period, region);
+      } catch (error) {
+        console.error("Failed to fetch Google Trends:", error);
+        throw error;
+      }
     },
     staleTime: period === 'day' ? 1000 * 60 * 30 : // 30 minutes for daily trends
               period === 'week' ? 1000 * 60 * 60 * 2 : // 2 hours for weekly trends
               1000 * 60 * 60 * 6, // 6 hours for monthly trends
     retry: 2,
     gcTime: 1000 * 60 * 60, // 1 hour
-    onError: (error: Error) => {
-      console.error("Failed to fetch Google Trends:", error);
-    }
   })
 }
