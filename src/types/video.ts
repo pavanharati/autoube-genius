@@ -26,6 +26,7 @@ export type TrendingTopic = {
   category?: string;
   trendingScore?: number;
   period?: "day" | "week" | "month";
+  region?: string; // Added region property to fix the type error
   searchVolume: string;
   trend: string;
   engagement: string;
