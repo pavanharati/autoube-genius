@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { TrendingUp, Clock, Globe } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -46,7 +45,8 @@ const TrendingTopicsTabs = ({
 
   const filteredTopics = searchQuery 
     ? trendingTopics.filter(topic => 
-        topic.topic.toLowerCase().includes(searchQuery.toLowerCase()))
+        topic.topic.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        topic.relatedTopics?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
     : trendingTopics;
 
   return (
@@ -113,7 +113,7 @@ const TrendingTopicsTabs = ({
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {filteredTopics.length > 0 ? (
-                filteredTopics.filter(t => t.period === period).map((topic, index) => (
+                filteredTopics.filter(t => !t.period || t.period === period).map((topic, index) => (
                   <div 
                     key={index} 
                     onClick={() => onTopicSelect(topic)}

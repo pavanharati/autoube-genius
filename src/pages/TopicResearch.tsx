@@ -30,7 +30,8 @@ const TopicResearch = () => {
     handleCreateVideo,
     backToTopics,
     setTopicAndScript,
-    initializeRagWithKey
+    initializeRagWithKey,
+    handleSearch
   } = useTopicResearch();
 
   // Check console for RAG initialization errors
@@ -55,6 +56,14 @@ const TopicResearch = () => {
     if (apiKey && apiKey.trim()) {
       initializeRagWithKey(apiKey.trim());
       setShowRagError(false);
+    }
+  };
+
+  // Handle search submission
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      handleSearch(searchQuery);
     }
   };
 
@@ -98,7 +107,9 @@ const TopicResearch = () => {
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
-              <SearchBar value={searchQuery} onChange={setSearchQuery} />
+              <form onSubmit={handleSearchSubmit}>
+                <SearchBar value={searchQuery} onChange={setSearchQuery} />
+              </form>
             </div>
             <div>
               <DocumentUploader />

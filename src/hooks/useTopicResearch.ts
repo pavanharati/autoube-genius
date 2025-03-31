@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { TrendingTopic, VideoGenerationOptions } from "@/types/video";
@@ -32,6 +33,8 @@ export const useTopicResearch = () => {
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('day');
   const [selectedRegion, setSelectedRegion] = useState<string>('US');
+  const [searchResults, setSearchResults] = useState<TrendingTopic[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
   const { initialize } = useRAG();
   const navigate = useNavigate();
@@ -61,6 +64,47 @@ export const useTopicResearch = () => {
       });
     }
   }, [trendingTopics, initialize, toast]);
+
+  // Handle search functionality
+  const handleSearch = (query: string) => {
+    setIsSearching(true);
+    
+    // Create a custom topic when no matches are found
+    const createCustomTopic = (query: string): TrendingTopic => {
+      return {
+        topic: query,
+        searchVolume: "500K+",
+        trend: "+10%",
+        engagement: "Medium",
+        relatedTopics: query.split(" ").filter(word => word.length > 3),
+        period: selectedPeriod,
+        region: selectedRegion
+      };
+    };
+    
+    try {
+      // First try to match existing topics
+      const matchedTopics = trendingTopics.filter(topic => 
+        topic.topic.toLowerCase().includes(query.toLowerCase()) ||
+        topic.relatedTopics?.some(tag => tag.toLowerCase().includes(query.toLowerCase()))
+      );
+      
+      // If no results, create a custom topic
+      if (matchedTopics.length === 0) {
+        const customTopic = createCustomTopic(query);
+        setSearchResults([customTopic]);
+      } else {
+        setSearchResults(matchedTopics);
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      // Fallback - create a custom topic anyway
+      const customTopic = createCustomTopic(query);
+      setSearchResults([customTopic]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const initializeRagWithKey = async (apiKey: string) => {
     if (trendingTopics.length > 0) {
@@ -234,8 +278,8 @@ export const useTopicResearch = () => {
     setSelectedPeriod,
     selectedRegion,
     setSelectedRegion,
-    trendingTopics,
-    isLoading,
+    trendingTopics: searchResults.length > 0 ? searchResults : trendingTopics,
+    isLoading: isLoading || isSearching,
     savedScripts,
     handleTopicSelect,
     handleGenerateScript,
@@ -243,6 +287,7 @@ export const useTopicResearch = () => {
     handleCreateVideo,
     backToTopics,
     setTopicAndScript,
-    initializeRagWithKey
+    initializeRagWithKey,
+    handleSearch
   };
 };
