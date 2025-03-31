@@ -10,6 +10,7 @@ import {
   Target,
   Search,
   Copy,
+  Globe,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { TrendingTopic } from "@/types/video";
+import { TrendingTopic } from "@/utils/api/googleTrends";
 import { fetchTrendingTopics, analyzeTopicPotential, generateCatchyTitle } from "@/utils/api/trendingScraper";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -29,11 +30,13 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { SearchBar } from "@/components/topics/SearchBar";
 import { useGoogleTrends } from "@/hooks/useGoogleTrends";
+import GoogleTrendingCard from "@/components/topics/GoogleTrendingCard";
+import { Badge } from "@/components/ui/badge";
 
 const Trending = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([]);
-  const [selectedNiche, setSelectedNiche] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedPeriod, setSelectedPeriod] = useState<"day" | "week" | "month">("day");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTopic, setSelectedTopic] = useState<TrendingTopic | null>(null);
@@ -43,12 +46,13 @@ const Trending = () => {
   const [isGeneratingTitles, setIsGeneratingTitles] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [selectedRegion, setSelectedRegion] = useState("US");
   const { toast } = useToast();
 
   const { data: trendingData, isLoading: isTrendsLoading, refetch } = useGoogleTrends(
-    selectedNiche === "all" ? undefined : selectedNiche, 
+    selectedCategory === "all" ? undefined : selectedCategory, 
     selectedPeriod, 
-    "US", 
+    selectedRegion, 
     searchKeyword
   );
 
@@ -61,14 +65,26 @@ const Trending = () => {
 
   useEffect(() => {
     refetch();
-  }, [selectedNiche, selectedPeriod, refetch]);
+  }, [selectedCategory, selectedPeriod, selectedRegion, refetch]);
 
-  const niches = [
-    { id: "all", name: "All Niches" },
-    { id: "technology", name: "Technology" },
+  const categories = [
+    { id: "all", name: "All Categories" },
+    { id: "entertainment", name: "Entertainment" },
     { id: "business", name: "Business" },
-    { id: "education", name: "Education" },
-    { id: "fitness", name: "Fitness" },
+    { id: "technology", name: "Technology" },
+    { id: "sports", name: "Sports" },
+    { id: "health", name: "Health" },
+  ];
+
+  const regions = [
+    { code: "US", name: "United States" },
+    { code: "GB", name: "United Kingdom" },
+    { code: "CA", name: "Canada" },
+    { code: "AU", name: "Australia" },
+    { code: "IN", name: "India" },
+    { code: "JP", name: "Japan" },
+    { code: "DE", name: "Germany" },
+    { code: "FR", name: "France" },
   ];
 
   const handleTopicSelect = async (topic: TrendingTopic) => {
@@ -95,7 +111,7 @@ const Trending = () => {
       const titles = [];
       
       for (let i = 0; i < 5; i++) {
-        const title = await generateCatchyTitle(selectedTopic.topic, selectedNiche);
+        const title = await generateCatchyTitle(selectedTopic.topic, selectedCategory);
         titles.push(title);
       }
       
@@ -156,9 +172,12 @@ const Trending = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-4xl font-bold">Trending Topics</h1>
+        <div className="flex items-center gap-2">
+          <TrendingUp className="h-6 w-6 text-accent" />
+          <h1 className="text-4xl font-bold">Google Trending Topics</h1>
+        </div>
         <p className="text-muted-foreground mt-2">
-          Discover trending topics that will help your videos go viral
+          Discover what's trending on Google and create content aligned with popular searches
         </p>
       </div>
 
@@ -173,21 +192,21 @@ const Trending = () => {
           />
         </div>
 
-        <div className="flex gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap gap-2 w-full md:w-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2">
                 <Filter className="h-4 w-4" />
-                {niches.find(n => n.id === selectedNiche)?.name || "All Niches"}
+                {categories.find(c => c.id === selectedCategory)?.name || "All Categories"}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              {niches.map((niche) => (
+              {categories.map((category) => (
                 <DropdownMenuItem 
-                  key={niche.id}
-                  onClick={() => setSelectedNiche(niche.id)}
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
                 >
-                  {niche.name}
+                  {category.name}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -214,6 +233,25 @@ const Trending = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Globe className="h-4 w-4" />
+                {regions.find(r => r.code === selectedRegion)?.name || "United States"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {regions.map((region) => (
+                <DropdownMenuItem 
+                  key={region.code}
+                  onClick={() => setSelectedRegion(region.code)}
+                >
+                  {region.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {searchKeyword && (
             <Button variant="outline" onClick={resetSearch}>
               Clear Search
@@ -222,68 +260,60 @@ const Trending = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {(isLoading || isTrendsLoading) ? (
-          Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i} className="h-[180px] flex items-center justify-center">
-              <Spinner size="lg" />
-            </Card>
-          ))
-        ) : filteredTopics.length > 0 ? (
-          filteredTopics.map((topic, index) => (
-            <Card
-              key={index}
-              className="cursor-pointer hover:shadow-md transition-shadow overflow-hidden"
-              onClick={() => handleTopicSelect(topic)}
-            >
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg leading-tight">
-                  {topic.topic}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Period</p>
-                    <p className="font-medium capitalize">{topic.period || 'day'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Search Volume</p>
-                    <p className="font-medium">{topic.searchVolume}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Trend</p>
-                    <p className="font-medium text-green-600">{topic.trend}</p>
-                  </div>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full flex justify-between items-center mt-2"
-                >
-                  <span>View Insights</span>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <div className="col-span-full text-center py-8">
-            <p className="text-muted-foreground">No trending topics found for the selected filters.</p>
-            {searchKeyword && (
-              <Button onClick={resetSearch} className="mt-4">
-                Clear Search
-              </Button>
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-accent" />
+              {searchKeyword ? `Results for "${searchKeyword}"` : "Top Trending Searches"}
+              
+              <Badge variant="outline" className="ml-2">
+                {regions.find(r => r.code === selectedRegion)?.name || "United States"}
+              </Badge>
+              
+              <Badge variant="outline">
+                {selectedPeriod === 'day' ? 'Past 24 Hours' : 
+                  selectedPeriod === 'week' ? 'Past Week' : 'Past Month'}
+              </Badge>
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {(isLoading || isTrendsLoading) ? (
+              Array.from({ length: 10 }).map((_, i) => (
+                <Card key={i} className="h-[100px] flex items-center justify-center">
+                  <Spinner size="lg" />
+                </Card>
+              ))
+            ) : filteredTopics.length > 0 ? (
+              filteredTopics.map((topic, index) => (
+                <GoogleTrendingCard
+                  key={index}
+                  topic={topic}
+                  rank={topic.rank || index + 1}
+                  onClick={() => handleTopicSelect(topic)}
+                />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-8">
+                <p className="text-muted-foreground">No trending topics found for the selected filters.</p>
+                {searchKeyword && (
+                  <Button onClick={resetSearch} className="mt-4">
+                    Clear Search
+                  </Button>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Topic Analysis Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl">{selectedTopic?.title}</DialogTitle>
+            <DialogTitle className="text-2xl">{selectedTopic?.topic}</DialogTitle>
           </DialogHeader>
 
           <Tabs defaultValue="insights">

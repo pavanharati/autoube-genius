@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -9,6 +10,10 @@ export interface TrendingTopic {
   relatedTopics: string[];
   period?: 'day' | 'week' | 'month';
   region?: string;
+  category?: string;
+  rank?: number;
+  formattedTraffic?: string;
+  articles?: Array<{title: string, source: string, url: string}>;
 }
 
 export const fetchTrendingTopics = async (
@@ -29,29 +34,80 @@ export const fetchTrendingTopics = async (
       // Transform the data into the expected format
       let topics: TrendingTopic[] = [];
       
-      if (supabaseData.realtime && supabaseData.realtime.storySummaries) {
-        topics = supabaseData.realtime.storySummaries.trendingStories.map((story: any) => ({
+      // Process daily trends
+      if (supabaseData.daily && supabaseData.daily.default && supabaseData.daily.default.trendingSearchesDays) {
+        const trendingDays = supabaseData.daily.default.trendingSearchesDays;
+        if (trendingDays.length > 0) {
+          const searches = trendingDays[0].trendingSearches || [];
+          topics = searches.map((search: any, index: number) => {
+            const articles = search.articles ? 
+              search.articles.map((article: any) => ({
+                title: article.title,
+                source: article.source,
+                url: article.url
+              })) : [];
+            
+            return {
+              topic: search.title.query || search.title,
+              searchVolume: search.formattedTraffic || `${Math.floor(Math.random() * 900) + 100}K`,
+              trend: `+${Math.floor(Math.random() * 20) + 5}%`,
+              engagement: "High",
+              relatedTopics: search.relatedQueries ? 
+                search.relatedQueries.map((q: any) => q.query) : 
+                [search.title.query || search.title],
+              period: period || 'day',
+              region: region,
+              rank: index + 1,
+              formattedTraffic: search.formattedTraffic,
+              articles: articles
+            };
+          });
+        }
+      }
+      
+      // If no daily trends, try realtime trends
+      if (topics.length === 0 && supabaseData.realtime && supabaseData.realtime.storySummaries) {
+        topics = supabaseData.realtime.storySummaries.trendingStories.map((story: any, index: number) => ({
           topic: story.title || story.entityNames[0] || "Trending Topic",
           searchVolume: `${Math.floor(Math.random() * 900) + 100}K`,
           trend: `+${Math.floor(Math.random() * 20) + 5}%`,
           engagement: story.entityNames.length > 3 ? "High" : story.entityNames.length > 1 ? "Medium" : "Low",
           relatedTopics: story.entityNames.slice(0, 3),
           period: period || 'day',
-          region: region
-        })).slice(0, 8);
+          region: region,
+          rank: index + 1,
+          articles: story.articles || []
+        })).slice(0, 12);
       }
       
       // If keyword is provided and no topics were found, create a custom topic for the keyword
       if (keyword && topics.length === 0) {
-        topics = [{
-          topic: keyword,
-          searchVolume: `${Math.floor(Math.random() * 900) + 100}K`,
-          trend: `+${Math.floor(Math.random() * 20) + 5}%`,
-          engagement: "Medium",
-          relatedTopics: [keyword.split(" ")[0], `${keyword} trends`, `${keyword} analytics`],
-          period: period || 'day',
-          region: region
-        }];
+        // If we have related topics data, use that
+        if (supabaseData.related && supabaseData.related.default && supabaseData.related.default.rankedList) {
+          const relatedItems = supabaseData.related.default.rankedList[0]?.rankedKeyword || [];
+          
+          topics = [{
+            topic: keyword,
+            searchVolume: `${Math.floor(Math.random() * 900) + 100}K`,
+            trend: `+${Math.floor(Math.random() * 20) + 5}%`,
+            engagement: "Medium",
+            relatedTopics: relatedItems.slice(0, 5).map((item: any) => item.query || item.topic),
+            period: period || 'day',
+            region: region,
+            rank: 1
+          }];
+        } else {
+          topics = [{
+            topic: keyword,
+            searchVolume: `${Math.floor(Math.random() * 900) + 100}K`,
+            trend: `+${Math.floor(Math.random() * 20) + 5}%`,
+            engagement: "Medium",
+            relatedTopics: [keyword.split(" ")[0], `${keyword} trends`, `${keyword} analytics`],
+            period: period || 'day',
+            region: region,
+            rank: 1
+          }];
+        }
       }
       
       return topics;
@@ -70,7 +126,8 @@ export const fetchTrendingTopics = async (
           engagement: "High",
           relatedTopics: [`${keyword} tutorial`, `${keyword} guide`, `${keyword} trends`],
           period: period || 'day',
-          region: region
+          region: region,
+          rank: 1
         },
         {
           topic: `Latest ${keyword} Developments`,
@@ -79,7 +136,8 @@ export const fetchTrendingTopics = async (
           engagement: "Medium",
           relatedTopics: [`${keyword} news`, `${keyword} updates`, `${keyword} industry`],
           period: period || 'day',
-          region: region
+          region: region,
+          rank: 2
         }
       ];
     }
@@ -92,7 +150,8 @@ export const fetchTrendingTopics = async (
         engagement: "High",
         relatedTopics: ["Machine Learning", "ChatGPT", "AI Applications"],
         period: period || 'day',
-        region: region
+        region: region,
+        rank: 1
       },
       {
         topic: "Future of Work",
@@ -101,7 +160,8 @@ export const fetchTrendingTopics = async (
         engagement: "Medium",
         relatedTopics: ["Remote Work", "Digital Nomads", "Work-Life Balance"],
         period: period || 'day',
-        region: region
+        region: region,
+        rank: 2
       },
       {
         topic: "Content Creation Tools",
@@ -110,7 +170,8 @@ export const fetchTrendingTopics = async (
         engagement: "High",
         relatedTopics: ["Video Editing", "AI Writers", "YouTube Growth"],
         period: period || 'day',
-        region: region
+        region: region,
+        rank: 3
       },
       {
         topic: "Passive Income Strategies",
@@ -119,7 +180,8 @@ export const fetchTrendingTopics = async (
         engagement: "High",
         relatedTopics: ["YouTube Monetization", "Digital Products", "Online Courses"],
         period: period || 'day',
-        region: region
+        region: region,
+        rank: 4
       },
     ];
   } catch (error) {
@@ -133,7 +195,8 @@ export const fetchTrendingTopics = async (
         engagement: "High",
         relatedTopics: ["Machine Learning", "ChatGPT", "AI Applications"],
         period: period || 'day',
-        region: region
+        region: region,
+        rank: 1
       },
       {
         topic: "Future of Work",
@@ -142,7 +205,8 @@ export const fetchTrendingTopics = async (
         engagement: "Medium",
         relatedTopics: ["Remote Work", "Digital Nomads", "Work-Life Balance"],
         period: period || 'day',
-        region: region
+        region: region,
+        rank: 2
       },
     ];
   }

@@ -23,5 +23,7 @@ export const useGoogleTrends = (
               1000 * 60 * 60 * 6, // 6 hours for monthly trends
     retry: 2,
     gcTime: 1000 * 60 * 60, // 1 hour
+    refetchOnWindowFocus: false,
+    enabled: true,
   })
 }
