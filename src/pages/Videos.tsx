@@ -1,11 +1,11 @@
-
 import { useState } from "react";
-import { Upload, TrendingUp, Plus, MessageSquareText } from "lucide-react";
+import { Upload, TrendingUp, Plus, MessageSquareText, FileVideo } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import VideoList from "@/components/videos/VideoList";
 import VideoDetails from "@/components/videos/VideoDetails";
 import VideoGenerator from "@/components/videos/VideoGenerator";
 import TextToVideoGenerator from "@/components/videos/TextToVideoGenerator";
+import StockVideoGenerator from "@/components/videos/StockVideoGenerator";
 import { Video, VideoGenerationOptions } from "@/types/video";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,6 +15,7 @@ const Videos = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showGenerator, setShowGenerator] = useState(false);
   const [showTextToVideo, setShowTextToVideo] = useState(false);
+  const [showStockVideoGenerator, setShowStockVideoGenerator] = useState(false);
   
   // Mock videos data with sample video URLs and captions
   const [videos, setVideos] = useState<Video[]>([
@@ -59,10 +60,8 @@ const Videos = () => {
 
   const handleUploadVideo = async (file: File) => {
     try {
-      // In a real app, this would upload and process the video
       console.log("Uploading video:", file.name);
       
-      // Mock upload success after 2 seconds
       setTimeout(() => {
         console.log("Video uploaded successfully");
       }, 2000);
@@ -74,7 +73,6 @@ const Videos = () => {
   const handleGenerateVideo = async (title: string, script: string, options: VideoGenerationOptions) => {
     setIsGenerating(true);
     try {
-      // In a real app, this would generate a video
       console.log("Generating video with title:", title);
       console.log("Script:", script);
       console.log("Options:", options);
@@ -82,7 +80,6 @@ const Videos = () => {
       await new Promise(resolve => setTimeout(resolve, 3000));
       console.log("Video generated successfully");
       
-      // Add the generated video to the list
       const newVideo: Video = {
         id: (videos.length + 1).toString(),
         title,
@@ -106,7 +103,6 @@ const Videos = () => {
   };
   
   const handleTextToVideoComplete = (result: { videoUrl: string; captionsUrl: string; title: string }) => {
-    // Add the generated video to the list
     const newVideo: Video = {
       id: (videos.length + 1).toString(),
       title: result.title,
@@ -122,6 +118,24 @@ const Videos = () => {
     setVideos([...videos, newVideo]);
     setSelectedVideo(newVideo.id);
     setShowTextToVideo(false);
+  };
+
+  const handleStockVideoComplete = (result: { videoUrl: string; captionsUrl: string; title: string }) => {
+    const newVideo: Video = {
+      id: (videos.length + 1).toString(),
+      title: result.title,
+      thumbnail: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05",
+      status: "Ready",
+      duration: "10:00",
+      uploadDate: new Date().toISOString().split('T')[0],
+      videoUrl: result.videoUrl,
+      captions: result.captionsUrl,
+      category: "Stock Footage",
+    };
+    
+    setVideos([...videos, newVideo]);
+    setSelectedVideo(newVideo.id);
+    setShowStockVideoGenerator(false);
   };
 
   return (
@@ -167,6 +181,21 @@ const Videos = () => {
             </DialogContent>
           </Dialog>
           
+          <Dialog open={showStockVideoGenerator} onOpenChange={setShowStockVideoGenerator}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <FileVideo className="h-4 w-4" />
+                Stock Video
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Create Stock Footage Video</DialogTitle>
+              </DialogHeader>
+              <StockVideoGenerator onComplete={handleStockVideoComplete} />
+            </DialogContent>
+          </Dialog>
+          
           <Dialog open={showGenerator} onOpenChange={setShowGenerator}>
             <DialogTrigger asChild>
               <Button className="gap-2">
@@ -197,7 +226,6 @@ const Videos = () => {
         
         <TabsContent value="all">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Videos List */}
             <div className="lg:col-span-1">
               <VideoList 
                 videos={videos}
@@ -206,7 +234,6 @@ const Videos = () => {
               />
             </div>
 
-            {/* Video Details */}
             <div className="lg:col-span-2">
               <VideoDetails video={videos.find(v => v.id === selectedVideo)} />
             </div>

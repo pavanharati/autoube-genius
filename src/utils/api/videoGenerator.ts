@@ -118,3 +118,49 @@ export const textToVideo = async (
     throw new Error("Failed to convert text to video: " + (error as Error).message);
   }
 };
+
+// New function to create videos from stock footage
+export const generateStockFootageVideo = async (
+  title: string, 
+  script: string,
+  options: {
+    stockSource: "pixabay" | "unsplash" | "flickr" | "mixed",
+    duration: number, // Target duration in minutes
+    musicStyle?: string,
+    captionsEnabled?: boolean
+  }
+): Promise<{ videoUrl: string, captionsUrl: string }> => {
+  try {
+    console.log("Generating stock footage video:", title);
+    console.log("Using stock source:", options.stockSource);
+    console.log("Target duration:", options.duration, "minutes");
+    
+    // Generate captions for the script
+    const captionsResponse = await generateCaptions(script);
+    
+    // Call the stock-video-generator edge function
+    const { data, error } = await supabase.functions.invoke("stock-video-generator", {
+      body: {
+        title,
+        script,
+        stockSource: options.stockSource,
+        targetDuration: options.duration,
+        musicStyle: options.musicStyle || "inspirational",
+        captionsEnabled: options.captionsEnabled !== false,
+        captionsUrl: captionsResponse.captionsUrl
+      }
+    });
+    
+    if (error) throw error;
+    
+    console.log("Stock video generation complete:", data);
+    
+    return {
+      videoUrl: data.videoUrl,
+      captionsUrl: captionsResponse.captionsUrl
+    };
+  } catch (error) {
+    console.error("Error generating stock footage video:", error);
+    throw new Error("Failed to generate stock footage video: " + (error as Error).message);
+  }
+};
