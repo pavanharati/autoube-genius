@@ -87,7 +87,7 @@ export const textToVideo = async (
     const { data: scriptData, error: scriptError } = await supabase.functions.invoke("generate-script", {
       body: {
         topic: prompt,
-        style: options?.style === 'informative' ? 'informative' : 'entertaining',
+        style: options?.style || 'ai-generated', // Fixed the comparison error
         targetLength: "medium"
       }
     });

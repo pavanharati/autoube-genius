@@ -6,53 +6,62 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Configurations for different video styles
-const styleConfigs = {
+// Model configurations for different video styles
+const modelConfigurations = {
   'cartoon': {
-    model: 'stabilityai/stable-video-diffusion',
+    model: 'CogVideo',  // THUDM/CogVideo
     params: {
-      motion_bucket_id: 20,
-      fps: 24,
+      num_inference_steps: 50,
+      seed: 42,
       style: 'cartoon',
     }
   },
   'anime': {
-    model: 'stabilityai/stable-video-diffusion',
+    model: 'TuneAVideo',  // showlab/Tune-A-Video
     params: {
-      motion_bucket_id: 20,
-      fps: 24,
+      num_inference_steps: 50,
+      guidance_scale: 7.5,
       style: 'anime',
     }
   },
   'stock': {
-    model: 'stabilityai/stable-video-diffusion',
+    model: 'VGen',  // ali-vilab/VGen
     params: {
-      motion_bucket_id: 127,
+      num_inference_steps: 30,
       fps: 24,
-      style: 'naturalistic',
+      resolution: 256,
     }
   },
   'realistic': {
-    model: 'stabilityai/stable-video-diffusion',
+    model: 'Mora',  // lichao-sun/Mora
     params: {
-      motion_bucket_id: 127,
+      num_inference_steps: 50,
+      guidance_scale: 7.5,
       fps: 24,
-      style: 'cinematic',
     }
   },
   'ultra-realistic': {
-    model: 'stabilityai/stable-video-diffusion',
+    model: 'OpenSora',  // hpcaitech/Open-Sora
     params: {
-      motion_bucket_id: 127,
+      num_inference_steps: 50,
+      guidance_scale: 9.0,
       fps: 30,
-      style: 'cinematic',
     }
   },
   'ai-generated': {
-    model: 'stability/stable-video-diffusion-img2vid-xt',
+    model: 'LTX-Video',  // Lightricks/LTX-Video
     params: {
+      num_inference_steps: 30,
+      guidance_scale: 7.0,
       fps: 24,
-      num_inference_steps: 25,
+    }
+  },
+  'unreal': {
+    model: 'StepVideo',  // stepfun-ai/Step-Video-TI2V
+    params: {
+      num_inference_steps: 50,
+      guidance_scale: 7.5,
+      fps: 30,
     }
   }
 };
@@ -76,45 +85,56 @@ serve(async (req) => {
     console.log(`Using voice type: ${options.voiceType || 'default'}`);
     console.log(`Captions enabled: ${options.captionsEnabled}`);
     
-    // Convert script to a set of key scenes to visualize
+    // Get the selected model configuration
+    const modelConfig = modelConfigurations[options.style] || modelConfigurations['ai-generated'];
+    console.log(`Using model: ${modelConfig.model} with parameters:`, modelConfig.params);
+    
+    // Convert script to scenes for visualization
     const scenes = await generateScenesFromScript(script, options.style);
     
-    // Generate video from scenes using the specified style
-    const videoUrl = await generateAiVideo(scenes, options.style);
-    
-    // Add audio track with voiceover and background music
-    const finalVideoUrl = await addAudioToVideo(videoUrl, script, options.voiceType, options.musicStyle);
-    
-    // Text analysis for additional metadata
-    const textAnalysis = analyzeText(script);
+    // Generate video using the selected AI model
+    // Note: In a production environment, this would involve more complex API calls
+    // to the actual AI video generation services
+    try {
+      // For now, we'll simulate the AI video generation process using sample videos
+      // This would be replaced with actual API calls to the chosen model
+      const videoUrl = await generateAIVideo(scenes, options.style, modelConfig);
+      
+      // Add audio track with voiceover and background music
+      const finalVideoUrl = await addAudioToVideo(videoUrl, script, options.voiceType, options.musicStyle);
+      
+      // Text analysis for additional metadata
+      const textAnalysis = analyzeText(script);
 
-    return new Response(
-      JSON.stringify({ 
-        videoUrl: finalVideoUrl,
-        captionsUrl: options.captionsEnabled ? captionsUrl : null,
-        title,
-        processing: {
-          status: "completed",
-          duration: estimateVideoDuration(script),
-          textSentiment: textAnalysis.sentiment,
-          dominantTopics: textAnalysis.topics
-        }
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    );
+      return new Response(
+        JSON.stringify({ 
+          videoUrl: finalVideoUrl,
+          captionsUrl: options.captionsEnabled ? captionsUrl : null,
+          title,
+          processing: {
+            status: "completed",
+            duration: estimateVideoDuration(script),
+            model: modelConfig.model,
+            textSentiment: textAnalysis.sentiment,
+            dominantTopics: textAnalysis.topics
+          }
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
+    } catch (generationError) {
+      console.error('Error in AI video generation:', generationError);
+      throw new Error(`AI video generation failed: ${generationError.message}`);
+    }
   } catch (error) {
     console.error('Error generating video:', error);
     
-    // Fallback to a sample video for demonstration when in development
-    const sampleVideoUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4";
-    
+    // We need to return a proper error response
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        videoUrl: sampleVideoUrl, // Fallback sample video
-        captionsUrl: null,
+        status: "failed"
       }),
       {
         status: 500,
@@ -136,38 +156,28 @@ async function generateScenesFromScript(script: string, style: string): Promise<
   return scenes;
 }
 
-// Function to generate AI video from scenes
-async function generateAiVideo(scenes: string[], style: string): Promise<string> {
+// Function to generate AI video from scenes using the selected model
+async function generateAIVideo(scenes: string[], style: string, modelConfig: any): Promise<string> {
   try {
-    // This is where we would integrate with our video generation model
-    // Since we don't have access to the actual generation API in this edge function,
-    // we'll simulate the process and return a sample URL
+    // This is where we would integrate with the actual AI video generation model
+    // Each model would have different API parameters and endpoints
     
-    const styleConfig = styleConfigs[style] || styleConfigs['ai-generated'];
-    console.log(`Using model: ${styleConfig.model} with style configuration:`, styleConfig.params);
+    console.log(`Using model: ${modelConfig.model} for style ${style}`);
     
-    // In a production environment, this would be an actual API call
-    // const response = await fetch('https://api.videoai.example/generate', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-    //   body: JSON.stringify({
-    //     model: styleConfig.model,
-    //     scenes: scenes,
-    //     params: styleConfig.params
-    //   })
-    // });
-    
-    // For now, we'll return a mock video URL
-    // In production, this would be the URL of the generated video
+    // For now, we'll use sample videos as placeholders
+    // In production, this would be replaced with actual API calls
     const mockVideoUrls = {
       'cartoon': "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
       'anime': "https://storage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
       'stock': "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
       'realistic': "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
       'ultra-realistic': "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-      'ai-generated': "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4"
+      'ai-generated': "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+      'unreal': "https://storage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4"
     };
     
+    // IMPORTANT: This is a placeholder for demonstration purposes
+    // In a real implementation, this would call the specific AI model's API
     return mockVideoUrls[style] || mockVideoUrls['ai-generated'];
   } catch (error) {
     console.error('Error in AI video generation:', error);

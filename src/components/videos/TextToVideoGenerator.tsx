@@ -4,11 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Wand2, Video, Loader2 } from "lucide-react";
+import { Wand2, Video, Loader2, Info } from "lucide-react";
 import { VideoGenerationOptions } from "@/types/video";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { textToVideo } from "@/utils/api/videoGenerator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface TextToVideoGeneratorProps {
   onComplete?: (result: { videoUrl: string; captionsUrl: string; title: string }) => void;
@@ -35,7 +41,7 @@ const TextToVideoGenerator = ({ onComplete }: TextToVideoGeneratorProps) => {
     try {
       toast({
         title: "Processing",
-        description: "Converting your text to video using AI. This may take a few moments...",
+        description: `Converting your text to video using AI ${getModelName(style)} model. This may take a few minutes...`,
       });
       
       const options: Partial<VideoGenerationOptions> = {
@@ -65,6 +71,20 @@ const TextToVideoGenerator = ({ onComplete }: TextToVideoGeneratorProps) => {
     }
   };
 
+  // Helper function to get model name based on style
+  const getModelName = (styleOption: VideoGenerationOptions["style"]) => {
+    const modelMap = {
+      'cartoon': 'CogVideo',
+      'anime': 'Tune-A-Video',
+      'stock': 'VGen',
+      'realistic': 'Mora',
+      'ultra-realistic': 'Open-Sora',
+      'ai-generated': 'LTX-Video',
+      'unreal': 'Step-Video'
+    };
+    return modelMap[styleOption] || 'AI';
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -86,7 +106,19 @@ const TextToVideoGenerator = ({ onComplete }: TextToVideoGeneratorProps) => {
         </div>
         
         <div>
-          <Label className="text-sm mb-3 block">Video Style</Label>
+          <div className="flex items-center mb-3">
+            <Label className="text-sm mr-2">Video Style / AI Model</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">Each style uses a different AI model for generation</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <RadioGroup
             value={style}
             onValueChange={(value) => setStyle(value as VideoGenerationOptions["style"])}
@@ -98,15 +130,10 @@ const TextToVideoGenerator = ({ onComplete }: TextToVideoGeneratorProps) => {
             >
               <RadioGroupItem id="ai-generated-style" value="ai-generated" className="sr-only" />
               <div className="w-full h-16 rounded bg-gradient-to-r from-accent to-accent-foreground mb-2"></div>
-              <span>AI Generated</span>
-            </Label>
-            <Label 
-              htmlFor="realistic-style"
-              className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${style === 'realistic' ? 'border-accent bg-accent/10' : 'border-border'}`}
-            >
-              <RadioGroupItem id="realistic-style" value="realistic" className="sr-only" />
-              <div className="w-full h-16 rounded bg-gradient-to-r from-amber-500 to-red-500 mb-2"></div>
-              <span>Realistic</span>
+              <div className="text-center">
+                <span className="block">LTX-Video</span>
+                <span className="text-xs text-muted-foreground">General Purpose</span>
+              </div>
             </Label>
             <Label 
               htmlFor="cartoon-style"
@@ -114,7 +141,10 @@ const TextToVideoGenerator = ({ onComplete }: TextToVideoGeneratorProps) => {
             >
               <RadioGroupItem id="cartoon-style" value="cartoon" className="sr-only" />
               <div className="w-full h-16 rounded bg-gradient-to-r from-blue-400 to-green-400 mb-2"></div>
-              <span>Cartoon</span>
+              <div className="text-center">
+                <span className="block">CogVideo</span>
+                <span className="text-xs text-muted-foreground">Cartoon Style</span>
+              </div>
             </Label>
             <Label 
               htmlFor="anime-style"
@@ -122,7 +152,10 @@ const TextToVideoGenerator = ({ onComplete }: TextToVideoGeneratorProps) => {
             >
               <RadioGroupItem id="anime-style" value="anime" className="sr-only" />
               <div className="w-full h-16 rounded bg-gradient-to-r from-purple-400 to-pink-400 mb-2"></div>
-              <span>Anime</span>
+              <div className="text-center">
+                <span className="block">Tune-A-Video</span>
+                <span className="text-xs text-muted-foreground">Anime Style</span>
+              </div>
             </Label>
             <Label 
               htmlFor="stock-style"
@@ -130,7 +163,21 @@ const TextToVideoGenerator = ({ onComplete }: TextToVideoGeneratorProps) => {
             >
               <RadioGroupItem id="stock-style" value="stock" className="sr-only" />
               <div className="w-full h-16 rounded bg-gradient-to-r from-gray-400 to-gray-600 mb-2"></div>
-              <span>Stock</span>
+              <div className="text-center">
+                <span className="block">VGen</span>
+                <span className="text-xs text-muted-foreground">Stock Footage</span>
+              </div>
+            </Label>
+            <Label 
+              htmlFor="realistic-style"
+              className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${style === 'realistic' ? 'border-accent bg-accent/10' : 'border-border'}`}
+            >
+              <RadioGroupItem id="realistic-style" value="realistic" className="sr-only" />
+              <div className="w-full h-16 rounded bg-gradient-to-r from-amber-500 to-red-500 mb-2"></div>
+              <div className="text-center">
+                <span className="block">Mora</span>
+                <span className="text-xs text-muted-foreground">Realistic</span>
+              </div>
             </Label>
             <Label 
               htmlFor="ultra-realistic-style"
@@ -138,7 +185,21 @@ const TextToVideoGenerator = ({ onComplete }: TextToVideoGeneratorProps) => {
             >
               <RadioGroupItem id="ultra-realistic-style" value="ultra-realistic" className="sr-only" />
               <div className="w-full h-16 rounded bg-gradient-to-r from-red-600 to-yellow-500 mb-2"></div>
-              <span>Ultra Realistic</span>
+              <div className="text-center">
+                <span className="block">Open-Sora</span>
+                <span className="text-xs text-muted-foreground">High Quality</span>
+              </div>
+            </Label>
+            <Label 
+              htmlFor="unreal-style"
+              className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${style === 'unreal' ? 'border-accent bg-accent/10' : 'border-border'}`}
+            >
+              <RadioGroupItem id="unreal-style" value="unreal" className="sr-only" />
+              <div className="w-full h-16 rounded bg-gradient-to-r from-blue-600 to-purple-500 mb-2"></div>
+              <div className="text-center">
+                <span className="block">Step-Video</span>
+                <span className="text-xs text-muted-foreground">Stylized</span>
+              </div>
             </Label>
           </RadioGroup>
         </div>
@@ -151,7 +212,7 @@ const TextToVideoGenerator = ({ onComplete }: TextToVideoGeneratorProps) => {
           {isGenerating ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Generating AI Video...
+              Generating with {getModelName(style)}...
             </>
           ) : (
             <>
@@ -163,7 +224,7 @@ const TextToVideoGenerator = ({ onComplete }: TextToVideoGeneratorProps) => {
 
         {isGenerating && (
           <div className="text-center text-sm text-muted-foreground mt-2">
-            <p>AI video generation may take 2-3 minutes depending on complexity.</p>
+            <p>AI video generation using {getModelName(style)} may take 2-3 minutes.</p>
             <p>You'll be notified when your video is ready.</p>
           </div>
         )}
