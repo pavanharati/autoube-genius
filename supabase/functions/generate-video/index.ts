@@ -22,39 +22,49 @@ serve(async (req) => {
     console.log(`Generating video for: ${title}`);
     console.log(`Using style: ${options.style}`);
     console.log(`Using music style: ${options.musicStyle}`);
+    console.log(`Using voice type: ${options.voiceType || 'default'}`);
     console.log(`Captions enabled: ${options.captionsEnabled}`);
-
-    // This is a mock implementation. In a real application, you would:
-    // 1. Generate a script from the title if not provided
-    // 2. Generate a voiceover using a text-to-speech service
-    // 3. Generate visuals based on the script and chosen style
-    // 4. Combine audio and visuals into a video
-    // 5. Add captions if requested
-    // 6. Return a URL to the generated video
     
-    // Wait to simulate video generation
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // In a production environment, here you would:
+    // 1. Generate a voiceover using a text-to-speech service
+    // 2. Generate visuals based on the script and chosen style
+    // 3. Combine audio and visuals into a video
+    // 4. Add captions if requested
     
-    // Mock response with different videos based on the selected style
+    // Simulated processing time based on script length and complexity
+    const processingTime = Math.min(5000, script.length * 5);
+    await new Promise(resolve => setTimeout(resolve, processingTime));
+    
+    // Select an appropriate video style based on the options
     let videoUrl;
+    let processingDuration;
     
     switch (options.style) {
       case 'cartoon':
         videoUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4";
+        processingDuration = "00:02:15";
         break;
       case 'anime':
         videoUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4";
+        processingDuration = "00:01:57";
         break;
       case 'stock':
         videoUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4";
+        processingDuration = "00:03:20";
         break;
       case 'realistic':
       case 'ultra-realistic':
         videoUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+        processingDuration = "00:04:30";
         break;
+      case 'ai-generated':
       default:
-        videoUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+        videoUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4";
+        processingDuration = "00:03:45";
     }
+    
+    // For text-to-video generation, we could adjust style parameters based on text analysis
+    const textAnalysis = analyzeText(script);
     
     return new Response(
       JSON.stringify({ 
@@ -63,7 +73,9 @@ serve(async (req) => {
         title,
         processing: {
           status: "completed",
-          duration: "00:03:45"
+          duration: processingDuration,
+          textSentiment: textAnalysis.sentiment,
+          dominantTopics: textAnalysis.topics
         }
       }),
       {
@@ -82,3 +94,41 @@ serve(async (req) => {
     );
   }
 });
+
+// Simple text analysis function to mimic AI analysis of script content
+function analyzeText(text: string) {
+  // This is a simplified mock of what would be a more sophisticated AI analysis
+  const lowerText = text.toLowerCase();
+  let sentiment = "neutral";
+  
+  // Simple sentiment analysis
+  const positiveWords = ["happy", "great", "excellent", "good", "best", "wonderful", "amazing"];
+  const negativeWords = ["bad", "terrible", "worst", "horrible", "sad", "unfortunate"];
+  
+  const positiveCount = positiveWords.filter(word => lowerText.includes(word)).length;
+  const negativeCount = negativeWords.filter(word => lowerText.includes(word)).length;
+  
+  if (positiveCount > negativeCount) sentiment = "positive";
+  else if (negativeCount > positiveCount) sentiment = "negative";
+  
+  // Simple topic extraction
+  const topics = [];
+  const topicKeywords = {
+    "technology": ["tech", "computer", "digital", "software", "hardware", "internet", "app"],
+    "business": ["business", "company", "finance", "market", "industry", "startup"],
+    "health": ["health", "medical", "fitness", "wellness", "exercise", "diet"],
+    "entertainment": ["movie", "music", "game", "film", "entertainment", "actor", "artist"],
+    "science": ["science", "research", "study", "discovery", "scientist", "lab"]
+  };
+  
+  for (const [topic, keywords] of Object.entries(topicKeywords)) {
+    if (keywords.some(keyword => lowerText.includes(keyword))) {
+      topics.push(topic);
+    }
+  }
+  
+  return {
+    sentiment,
+    topics: topics.length > 0 ? topics : ["general"]
+  };
+}

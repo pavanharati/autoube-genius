@@ -1,10 +1,11 @@
 
 import { useState } from "react";
-import { Upload, TrendingUp, Plus } from "lucide-react";
+import { Upload, TrendingUp, Plus, MessageSquareText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import VideoList from "@/components/videos/VideoList";
 import VideoDetails from "@/components/videos/VideoDetails";
 import VideoGenerator from "@/components/videos/VideoGenerator";
+import TextToVideoGenerator from "@/components/videos/TextToVideoGenerator";
 import { Video, VideoGenerationOptions } from "@/types/video";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,9 +14,10 @@ const Videos = () => {
   const [selectedVideo, setSelectedVideo] = useState<string | null>("1");
   const [isGenerating, setIsGenerating] = useState(false);
   const [showGenerator, setShowGenerator] = useState(false);
+  const [showTextToVideo, setShowTextToVideo] = useState(false);
   
   // Mock videos data with sample video URLs and captions
-  const videos: Video[] = [
+  const [videos, setVideos] = useState<Video[]>([
     {
       id: "1",
       title: "10 AI Tools That Will Change Your Life in 2024",
@@ -53,7 +55,7 @@ const Videos = () => {
       trending: true,
       trendingPeriod: "week",
     },
-  ];
+  ]);
 
   const handleUploadVideo = async (file: File) => {
     try {
@@ -80,12 +82,46 @@ const Videos = () => {
       await new Promise(resolve => setTimeout(resolve, 3000));
       console.log("Video generated successfully");
       
+      // Add the generated video to the list
+      const newVideo: Video = {
+        id: (videos.length + 1).toString(),
+        title,
+        thumbnail: "https://images.unsplash.com/photo-1677442135968-6d89b6808134",
+        status: "Ready",
+        duration: "03:45",
+        uploadDate: new Date().toISOString().split('T')[0],
+        videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+        captions: "https://raw.githubusercontent.com/andrewnester/sample-webvtt/master/captions-basic.vtt",
+        category: "Generated",
+      };
+      
+      setVideos([...videos, newVideo]);
+      setSelectedVideo(newVideo.id);
       setShowGenerator(false);
     } catch (error) {
       console.error('Error generating video:', error);
     } finally {
       setIsGenerating(false);
     }
+  };
+  
+  const handleTextToVideoComplete = (result: { videoUrl: string; captionsUrl: string; title: string }) => {
+    // Add the generated video to the list
+    const newVideo: Video = {
+      id: (videos.length + 1).toString(),
+      title: result.title,
+      thumbnail: "https://images.unsplash.com/photo-1518770660439-4636190af475",
+      status: "Ready",
+      duration: "02:30",
+      uploadDate: new Date().toISOString().split('T')[0],
+      videoUrl: result.videoUrl,
+      captions: result.captionsUrl,
+      category: "Generated",
+    };
+    
+    setVideos([...videos, newVideo]);
+    setSelectedVideo(newVideo.id);
+    setShowTextToVideo(false);
   };
 
   return (
@@ -115,6 +151,21 @@ const Videos = () => {
             <Upload className="h-4 w-4" />
             Upload Video
           </Button>
+          
+          <Dialog open={showTextToVideo} onOpenChange={setShowTextToVideo}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <MessageSquareText className="h-4 w-4" />
+                Text to Video
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Create Video from Text</DialogTitle>
+              </DialogHeader>
+              <TextToVideoGenerator onComplete={handleTextToVideoComplete} />
+            </DialogContent>
+          </Dialog>
           
           <Dialog open={showGenerator} onOpenChange={setShowGenerator}>
             <DialogTrigger asChild>

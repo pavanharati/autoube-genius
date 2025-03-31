@@ -74,3 +74,47 @@ export const analyzeVideoFromUrl = async (videoUrl: string): Promise<{
     throw new Error("Failed to analyze video");
   }
 };
+
+// New function to convert text directly to video without requiring a script
+export const textToVideo = async (
+  prompt: string,
+  options?: Partial<VideoGenerationOptions>
+): Promise<{ videoUrl: string, captionsUrl: string, title: string }> => {
+  try {
+    console.log("Converting text to video:", prompt);
+    
+    // Generate a script from the prompt text
+    const { data: scriptData, error: scriptError } = await supabase.functions.invoke("generate-script", {
+      body: {
+        topic: prompt,
+        style: options?.style === 'entertaining' ? 'entertaining' : 'informative',
+        targetLength: "medium"
+      }
+    });
+    
+    if (scriptError) throw scriptError;
+    
+    const script = scriptData.script;
+    const title = prompt.length > 50 ? prompt.substring(0, 50) + "..." : prompt;
+    
+    // Now generate the video with the script
+    const defaultOptions: VideoGenerationOptions = {
+      style: "ai-generated",
+      musicStyle: "inspirational",
+      captionsEnabled: true,
+      voiceType: "natural"
+    };
+    
+    const videoOptions = { ...defaultOptions, ...options };
+    
+    const videoResult = await generateVideo(title, script, videoOptions);
+    
+    return {
+      ...videoResult,
+      title
+    };
+  } catch (error) {
+    console.error("Error in text to video conversion:", error);
+    throw new Error("Failed to convert text to video: " + (error as Error).message);
+  }
+};
