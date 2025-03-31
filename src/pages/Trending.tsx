@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   TrendingUp, 
@@ -12,7 +13,6 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   DropdownMenu, 
@@ -28,6 +28,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { SearchBar } from "@/components/topics/SearchBar";
+import { useGoogleTrends } from "@/hooks/useGoogleTrends";
 
 const Trending = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,7 +41,27 @@ const Trending = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [generatedTitles, setGeneratedTitles] = useState<string[]>([]);
   const [isGeneratingTitles, setIsGeneratingTitles] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState("");
   const { toast } = useToast();
+
+  const { data: trendingData, isLoading: isTrendsLoading, refetch } = useGoogleTrends(
+    selectedNiche === "all" ? undefined : selectedNiche, 
+    selectedPeriod, 
+    "US", 
+    searchKeyword
+  );
+
+  useEffect(() => {
+    if (trendingData) {
+      setTrendingTopics(trendingData);
+      setIsLoading(false);
+    }
+  }, [trendingData]);
+
+  useEffect(() => {
+    refetch();
+  }, [selectedNiche, selectedPeriod, refetch]);
 
   const niches = [
     { id: "all", name: "All Niches" },
@@ -50,31 +71,10 @@ const Trending = () => {
     { id: "fitness", name: "Fitness" },
   ];
 
-  useEffect(() => {
-    loadTrendingTopics();
-  }, [selectedNiche, selectedPeriod]);
-
-  const loadTrendingTopics = async () => {
-    setIsLoading(true);
-    try {
-      const topics = await fetchTrendingTopics(selectedNiche, selectedPeriod);
-      setTrendingTopics(topics);
-    } catch (error) {
-      console.error("Failed to fetch trending topics:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch trending topics",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleTopicSelect = async (topic: TrendingTopic) => {
     setSelectedTopic(topic);
     try {
-      const analysisData = await analyzeTopicPotential(topic.title);
+      const analysisData = await analyzeTopicPotential(topic.topic);
       setAnalysis(analysisData);
       setIsDialogOpen(true);
     } catch (error) {
@@ -95,7 +95,7 @@ const Trending = () => {
       const titles = [];
       
       for (let i = 0; i < 5; i++) {
-        const title = await generateCatchyTitle(selectedTopic.title, selectedNiche);
+        const title = await generateCatchyTitle(selectedTopic.topic, selectedNiche);
         titles.push(title);
       }
       
@@ -120,23 +120,38 @@ const Trending = () => {
     });
   };
 
-  const handleSearchSubmit = () => {
-    if (searchQuery.trim()) {
-      const filteredResults = trendingTopics.filter((topic) => 
-        topic.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        topic.category?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setTrendingTopics(filteredResults.length > 0 ? filteredResults : trendingTopics);
-    } else {
-      loadTrendingTopics();
+  const handleSearchSubmit = async () => {
+    if (!searchQuery.trim()) return;
+    
+    setIsSearching(true);
+    setSearchKeyword(searchQuery);
+    
+    try {
+      await refetch();
+      
+      toast({
+        title: "Search complete",
+        description: `Showing results for "${searchQuery}"`,
+      });
+    } catch (error) {
+      console.error("Search error:", error);
+      toast({
+        title: "Search error",
+        description: "Failed to search for trending topics. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearching(false);
     }
   };
 
-  const filteredTopics = searchQuery
-    ? trendingTopics.filter((topic) =>
-        topic.title.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : trendingTopics;
+  const resetSearch = () => {
+    setSearchQuery("");
+    setSearchKeyword("");
+    refetch();
+  };
+
+  const filteredTopics = trendingTopics || [];
 
   return (
     <div className="space-y-8">
@@ -151,8 +166,10 @@ const Trending = () => {
         <div className="relative w-full md:w-auto md:flex-1 max-w-xl">
           <SearchBar 
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e)}
+            onChange={setSearchQuery}
             onSubmit={handleSearchSubmit}
+            placeholder="Search for trending topics..."
+            isLoading={isSearching}
           />
         </div>
 
@@ -196,11 +213,17 @@ const Trending = () => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {searchKeyword && (
+            <Button variant="outline" onClick={resetSearch}>
+              Clear Search
+            </Button>
+          )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {isLoading ? (
+        {(isLoading || isTrendsLoading) ? (
           Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} className="h-[180px] flex items-center justify-center">
               <Spinner size="lg" />
@@ -215,22 +238,22 @@ const Trending = () => {
             >
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg leading-tight">
-                  {topic.title}
+                  {topic.topic}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-3 gap-4 mb-4">
                   <div>
-                    <p className="text-xs text-muted-foreground">Trending Score</p>
-                    <p className="font-medium">{topic.trendingScore}/100</p>
+                    <p className="text-xs text-muted-foreground">Period</p>
+                    <p className="font-medium capitalize">{topic.period || 'day'}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Search Volume</p>
                     <p className="font-medium">{topic.searchVolume}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Category</p>
-                    <p className="font-medium capitalize">{topic.category}</p>
+                    <p className="text-xs text-muted-foreground">Trend</p>
+                    <p className="font-medium text-green-600">{topic.trend}</p>
                   </div>
                 </div>
                 <Button 
@@ -247,6 +270,11 @@ const Trending = () => {
         ) : (
           <div className="col-span-full text-center py-8">
             <p className="text-muted-foreground">No trending topics found for the selected filters.</p>
+            {searchKeyword && (
+              <Button onClick={resetSearch} className="mt-4">
+                Clear Search
+              </Button>
+            )}
           </div>
         )}
       </div>

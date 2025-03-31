@@ -2,12 +2,17 @@
 import { useQuery } from "@tanstack/react-query"
 import { fetchTrendingTopics, TrendingTopic } from "@/utils/api/googleTrends"
 
-export const useGoogleTrends = (category?: string, period?: 'day' | 'week' | 'month', region: string = 'US') => {
+export const useGoogleTrends = (
+  category?: string, 
+  period?: 'day' | 'week' | 'month', 
+  region: string = 'US',
+  keyword?: string
+) => {
   return useQuery({
-    queryKey: ["google-trends", category, period, region],
+    queryKey: ["google-trends", category, period, region, keyword],
     queryFn: async (): Promise<TrendingTopic[]> => {
       try {
-        return await fetchTrendingTopics(category, period, region);
+        return await fetchTrendingTopics(category, period, region, keyword);
       } catch (error) {
         console.error("Failed to fetch Google Trends:", error);
         throw error;

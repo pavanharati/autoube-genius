@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { TrendingTopic, VideoGenerationOptions } from "@/types/video";
@@ -35,11 +34,17 @@ export const useTopicResearch = () => {
   const [selectedRegion, setSelectedRegion] = useState<string>('US');
   const [searchResults, setSearchResults] = useState<TrendingTopic[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState("");
   const { toast } = useToast();
   const { initialize } = useRAG();
   const navigate = useNavigate();
   
-  const { data: trendingTopics = [], isLoading } = useGoogleTrends(undefined, selectedPeriod, selectedRegion);
+  const { data: trendingTopics = [], isLoading } = useGoogleTrends(
+    undefined, 
+    selectedPeriod, 
+    selectedRegion,
+    searchKeyword
+  );
 
   useEffect(() => {
     const savedScriptsFromStorage = localStorage.getItem('saved-scripts');
@@ -65,9 +70,9 @@ export const useTopicResearch = () => {
     }
   }, [trendingTopics, initialize, toast]);
 
-  // Handle search functionality
   const handleSearch = (query: string) => {
     setIsSearching(true);
+    setSearchKeyword(query);
     
     // Create a custom topic when no matches are found
     const createCustomTopic = (query: string): TrendingTopic => {
@@ -288,6 +293,8 @@ export const useTopicResearch = () => {
     backToTopics,
     setTopicAndScript,
     initializeRagWithKey,
-    handleSearch
+    handleSearch,
+    searchKeyword,
+    setSearchKeyword
   };
 };
