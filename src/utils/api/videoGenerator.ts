@@ -2,6 +2,14 @@
 import { VideoGenerationOptions } from "@/types/video";
 import { supabase } from "@/integrations/supabase/client";
 
+// API keys for stock footage services
+const API_KEYS = {
+  pixabay: "18894960-eeef8808086099125ac0a2e65",
+  unsplash: "SuKAF6VfUn-Mbzsk8jy5jtVleOwMG5wyj4lmEriVV0g",
+  flickr: "ce68a614b010c2f08d26a88fa05c1e1e",
+  pexels: "NB5e7YZoqmI5LScSgIm5xDMTYDdQ7RFzqwmwxdRuexPQDHThpbti1ioE"
+};
+
 // This implementation prepares for integration with open-source generation tools
 // It will connect to GPU-powered services when they become available
 export const generateVideo = async (
@@ -119,17 +127,17 @@ export const textToVideo = async (
   }
 };
 
-// New function to create videos from stock footage
+// Function to create videos from stock footage with real API integration
 export const generateStockFootageVideo = async (
   title: string, 
   script: string,
   options: {
-    stockSource: "pixabay" | "unsplash" | "flickr" | "mixed",
+    stockSource: "pixabay" | "unsplash" | "flickr" | "pexels" | "mixed",
     duration: number, // Target duration in minutes
     musicStyle?: string,
     captionsEnabled?: boolean
   }
-): Promise<{ videoUrl: string, captionsUrl: string }> => {
+): Promise<{ videoUrl: string, captionsUrl: string, videoClips?: string[] }> => {
   try {
     console.log("Generating stock footage video:", title);
     console.log("Using stock source:", options.stockSource);
@@ -157,7 +165,8 @@ export const generateStockFootageVideo = async (
     
     return {
       videoUrl: data.videoUrl,
-      captionsUrl: captionsResponse.captionsUrl
+      captionsUrl: captionsResponse.captionsUrl,
+      videoClips: data.processingDetails?.videos || []
     };
   } catch (error) {
     console.error("Error generating stock footage video:", error);

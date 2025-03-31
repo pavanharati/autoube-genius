@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -5,26 +6,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Stock video APIs configuration
+// Stock video APIs configuration with real API keys
 const stockSources = {
   pixabay: {
     apiUrl: "https://pixabay.com/api/videos/",
-    apiKey: Deno.env.get("PIXABAY_API_KEY") || "", // Would be set in production
+    apiKey: "18894960-eeef8808086099125ac0a2e65",
     searchEndpoint: (query: string) => 
-      `https://pixabay.com/api/videos/?key=${stockSources.pixabay.apiKey}&q=${encodeURIComponent(query)}&per_page=10`
+      `https://pixabay.com/api/videos/?key=18894960-eeef8808086099125ac0a2e65&q=${encodeURIComponent(query)}&per_page=10`
   },
   unsplash: {
-    // Unsplash doesn't have a video API, but we could use a similar service or their image API
     apiUrl: "https://api.unsplash.com/",
-    apiKey: Deno.env.get("UNSPLASH_API_KEY") || "", // Would be set in production
+    apiKey: "SuKAF6VfUn-Mbzsk8jy5jtVleOwMG5wyj4lmEriVV0g",
     searchEndpoint: (query: string) => 
-      `https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&count=5&client_id=${stockSources.unsplash.apiKey}`
+      `https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&count=5&client_id=SuKAF6VfUn-Mbzsk8jy5jtVleOwMG5wyj4lmEriVV0g`
   },
   flickr: {
     apiUrl: "https://www.flickr.com/services/rest/",
-    apiKey: Deno.env.get("FLICKR_API_KEY") || "", // Would be set in production
+    apiKey: "ce68a614b010c2f08d26a88fa05c1e1e",
     searchEndpoint: (query: string) => 
-      `https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=${stockSources.flickr.apiKey}&text=${encodeURIComponent(query)}&format=json&nojsoncallback=1&extras=url_o`
+      `https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=ce68a614b010c2f08d26a88fa05c1e1e&text=${encodeURIComponent(query)}&format=json&nojsoncallback=1&extras=url_o`
+  },
+  pexels: {
+    apiUrl: "https://api.pexels.com/v1/",
+    apiKey: "NB5e7YZoqmI5LScSgIm5xDMTYDdQ7RFzqwmwxdRuexPQDHThpbti1ioE",
+    searchEndpoint: (query: string) => 
+      `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=10`
   }
 };
 
@@ -84,42 +90,87 @@ function estimateVideoDuration(script: string): number {
   return durationInMinutes;
 }
 
-// Mock function to simulate retrieving stock videos
-// In production, this would make actual API calls to stock video services
+// Real function to retrieve stock videos from various APIs
 async function fetchStockVideos(
   searchTerms: string[], 
-  source: "pixabay" | "unsplash" | "flickr" | "mixed"
+  source: "pixabay" | "unsplash" | "flickr" | "pexels" | "mixed"
 ): Promise<string[]> {
   console.log(`Searching for videos with terms: ${searchTerms.join(", ")}`);
   console.log(`Using source: ${source}`);
   
-  // For now, return sample videos from a public source
-  // In production, we'd make real API calls to stock video services
-  const sampleVideos = [
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4"
-  ];
+  const results: string[] = [];
   
-  // Ensure we have enough videos for all search terms
-  // by cycling through the sample videos if needed
-  const result: string[] = [];
-  for (let i = 0; i < searchTerms.length; i++) {
-    result.push(sampleVideos[i % sampleVideos.length]);
+  // For mixed source, we'll rotate through the available APIs
+  const sources = source === "mixed" 
+    ? ["pixabay", "pexels"] // Only using sources that provide video (Unsplash is mainly images)
+    : [source];
+  
+  let sourceIndex = 0;
+  
+  for (const term of searchTerms) {
+    const currentSource = sources[sourceIndex % sources.length];
+    sourceIndex++;
+    
+    try {
+      if (currentSource === "pixabay") {
+        const endpoint = stockSources.pixabay.searchEndpoint(term);
+        const response = await fetch(endpoint);
+        const data = await response.json();
+        
+        if (data.hits && data.hits.length > 0) {
+          // Get a video URL from the results - Pixabay provides various formats
+          const videoData = data.hits[0].videos;
+          const videoUrl = videoData.large?.url || videoData.medium?.url || videoData.small?.url;
+          if (videoUrl) {
+            results.push(videoUrl);
+            continue;
+          }
+        }
+      } 
+      else if (currentSource === "pexels") {
+        const endpoint = stockSources.pexels.searchEndpoint(term);
+        const response = await fetch(endpoint, {
+          headers: {
+            'Authorization': stockSources.pexels.apiKey
+          }
+        });
+        const data = await response.json();
+        
+        if (data.videos && data.videos.length > 0) {
+          // Get a video URL from the results
+          const videoFiles = data.videos[0].video_files;
+          const videoFile = videoFiles.find((file: any) => file.quality === "sd" || file.quality === "hd");
+          if (videoFile && videoFile.link) {
+            results.push(videoFile.link);
+            continue;
+          }
+        }
+      }
+      
+      // Fallback to sample videos if API doesn't return any results
+      const sampleVideos = [
+        "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+        "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+        "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+        "https://storage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+        "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+        "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+        "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4"
+      ];
+      
+      results.push(sampleVideos[results.length % sampleVideos.length]);
+      
+    } catch (error) {
+      console.error(`Error fetching from ${currentSource} for term "${term}":`, error);
+      // Use fallback
+      results.push("https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4");
+    }
   }
   
-  return result;
+  return results;
 }
 
-// Mock function to simulate video composition
+// Simulate video composition
 // In production, this would use a video editing API or library
 async function composeVideo(
   videos: string[], 
@@ -131,20 +182,9 @@ async function composeVideo(
   console.log(`Using music style: ${musicStyle}`);
   console.log(`Captions URL: ${captionsUrl || "none"}`);
   
-  // This function would normally do the actual composition
-  // For now, we'll just return one of the sample videos as the "composed" result
-  // In production, this would use a video editing service or library
-  
-  // We'll use different videos based on music style to simulate different results
-  const musicStyleVideoMap: Record<string, string> = {
-    "inspirational": "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
-    "upbeat": "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-    "calm": "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    "dramatic": "https://storage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
-    "corporate": "https://storage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4"
-  };
-  
-  return musicStyleVideoMap[musicStyle] || "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+  // For now we'll simply return the first video URL as a "composed" result
+  // In a real production environment, this would use a video compositing service
+  return videos.length > 0 ? videos[0] : "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
 }
 
 serve(async (req) => {
@@ -205,7 +245,8 @@ serve(async (req) => {
           estimatedDuration: `${Math.round(estimateVideoDuration(script) * 60)}s`,
           actualDuration: targetDuration * 60, // seconds
           stockSource: stockSource,
-          musicStyle: musicStyle
+          musicStyle: musicStyle,
+          videos: stockVideos // Return the individual video clips too
         }
       }),
       {

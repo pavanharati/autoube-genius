@@ -11,6 +11,7 @@ export type Video = {
   category?: string; // Added category for better organization
   trending?: boolean; // Flag for trending videos
   trendingPeriod?: "day" | "week" | "month"; // Period for which the video is trending
+  videoClips?: string[]; // Array of video clip URLs used in the video
 };
 
 export type VideoGenerationOptions = {

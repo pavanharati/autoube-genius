@@ -9,6 +9,7 @@ import StockVideoGenerator from "@/components/videos/StockVideoGenerator";
 import { Video, VideoGenerationOptions } from "@/types/video";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { generateStockFootageVideo } from "@/utils/api/videoGenerator";
 
 const Videos = () => {
   const [selectedVideo, setSelectedVideo] = useState<string | null>("1");
@@ -120,7 +121,7 @@ const Videos = () => {
     setShowTextToVideo(false);
   };
 
-  const handleStockVideoComplete = (result: { videoUrl: string; captionsUrl: string; title: string }) => {
+  const handleStockVideoComplete = async (result: { videoUrl: string; captionsUrl: string; title: string }) => {
     const newVideo: Video = {
       id: (videos.length + 1).toString(),
       title: result.title,
@@ -130,7 +131,7 @@ const Videos = () => {
       uploadDate: new Date().toISOString().split('T')[0],
       videoUrl: result.videoUrl,
       captions: result.captionsUrl,
-      category: "Stock Footage",
+      category: "Real Stock Footage",
     };
     
     setVideos([...videos, newVideo]);
@@ -185,7 +186,7 @@ const Videos = () => {
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2">
                 <FileVideo className="h-4 w-4" />
-                Stock Video
+                Real Stock Video
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">

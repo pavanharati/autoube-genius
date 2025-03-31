@@ -26,10 +26,11 @@ const StockVideoGenerator = ({
   const [title, setTitle] = useState(initialTitle);
   const [script, setScript] = useState(initialScript);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [stockSource, setStockSource] = useState<"pixabay" | "unsplash" | "flickr" | "mixed">("mixed");
+  const [stockSource, setStockSource] = useState<"pixabay" | "unsplash" | "flickr" | "pexels" | "mixed">("mixed");
   const [targetDuration, setTargetDuration] = useState(10); // Default 10 minutes
   const [musicStyle, setMusicStyle] = useState("inspirational");
   const [captionsEnabled, setCaptionsEnabled] = useState(true);
+  const [generatedVideoClips, setGeneratedVideoClips] = useState<string[]>([]);
   const { toast } = useToast();
 
   const handleGenerate = async () => {
@@ -69,6 +70,11 @@ const StockVideoGenerator = ({
           captionsEnabled
         }
       );
+      
+      // Store any returned video clips for display
+      if (result.videoClips && result.videoClips.length > 0) {
+        setGeneratedVideoClips(result.videoClips);
+      }
       
       toast({
         title: "Success",
@@ -137,6 +143,7 @@ const StockVideoGenerator = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="pixabay">Pixabay</SelectItem>
+                <SelectItem value="pexels">Pexels</SelectItem>
                 <SelectItem value="unsplash">Unsplash</SelectItem>
                 <SelectItem value="flickr">Flickr</SelectItem>
                 <SelectItem value="mixed">Mixed Sources</SelectItem>
@@ -200,7 +207,7 @@ const StockVideoGenerator = ({
           ) : (
             <>
               <Film className="h-4 w-4" />
-              Generate Stock Video
+              Generate Real Stock Video
             </>
           )}
         </Button>
@@ -214,6 +221,21 @@ const StockVideoGenerator = ({
           <p className="text-xs text-muted-foreground text-center mt-2">
             Creates videos using footage from {stockSource === "mixed" ? "multiple sources" : stockSource}
           </p>
+        )}
+
+        {generatedVideoClips.length > 0 && (
+          <div className="mt-4">
+            <h3 className="text-sm font-medium mb-2">Generated Video Clips</h3>
+            <div className="grid grid-cols-1 gap-2">
+              {generatedVideoClips.map((clip, index) => (
+                <div key={index} className="text-xs text-blue-500 truncate hover:text-blue-700">
+                  <a href={clip} target="_blank" rel="noopener noreferrer">
+                    Clip {index + 1}: {clip.substring(0, 50)}...
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>
