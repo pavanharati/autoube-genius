@@ -13,7 +13,15 @@ export interface TrendingTopic {
   category?: string;
   rank?: number;
   formattedTraffic?: string;
-  articles?: Array<{title: string, source: string, url: string}>;
+  articles?: Array<{
+    title: string, 
+    source: string, 
+    url: string,
+    picture?: string
+  }>;
+  picture?: string;
+  pictureSource?: string;
+  pubDate?: string;
 }
 
 export const fetchTrendingTopics = async (
@@ -30,6 +38,11 @@ export const fetchTrendingTopics = async (
     
     if (!error && supabaseData) {
       console.log("Fetched trends from Supabase function:", supabaseData);
+      
+      // If data is from RSS feed, we already have it formatted correctly
+      if (supabaseData.source === "rss" && supabaseData.topics) {
+        return supabaseData.topics;
+      }
       
       // Transform the data into the expected format
       let topics: TrendingTopic[] = [];
