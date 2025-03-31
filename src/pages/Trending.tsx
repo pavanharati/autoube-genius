@@ -27,6 +27,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { SearchBar } from "@/components/topics/SearchBar";
 
 const Trending = () => {
   const [searchQuery, setSearchQuery] = useState("");
