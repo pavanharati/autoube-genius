@@ -2,8 +2,8 @@
 import { VideoGenerationOptions } from "@/types/video";
 import { supabase } from "@/integrations/supabase/client";
 
-// This implementation uses the open-source generation tools
-// It integrates with our Supabase edge functions for video generation
+// This implementation prepares for integration with open-source generation tools
+// It will connect to GPU-powered services when they become available
 export const generateVideo = async (
   title: string,
   script: string,
@@ -15,7 +15,7 @@ export const generateVideo = async (
     // First, generate captions from the script
     const captionsResponse = await generateCaptions(script);
     
-    // Then, generate the actual video
+    // Then, generate the actual video using the selected AI model
     const { data, error } = await supabase.functions.invoke("generate-video", {
       body: {
         title,
@@ -87,7 +87,7 @@ export const textToVideo = async (
     const { data: scriptData, error: scriptError } = await supabase.functions.invoke("generate-script", {
       body: {
         topic: prompt,
-        style: options?.style || 'ai-generated', // Fixed the comparison error
+        style: options?.style || 'ai-generated',
         targetLength: "medium"
       }
     });

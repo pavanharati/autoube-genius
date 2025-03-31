@@ -8,9 +8,16 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Wand2, Music, Video, Lightbulb, FileText } from "lucide-react";
+import { Wand2, Music, Video, Lightbulb, FileText, AlertTriangle } from "lucide-react";
 import { VideoGenerationOptions } from "@/types/video";
 import { Slider } from "@/components/ui/slider";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface VideoGeneratorProps {
   onGenerate: (title: string, script: string, options: VideoGenerationOptions) => Promise<void>;
@@ -18,6 +25,56 @@ interface VideoGeneratorProps {
   initialTitle?: string;
   isGenerating?: boolean;
 }
+
+// GPU requirements for each model
+const gpuRequirements = {
+  "cartoon": "High (A100 recommended)",
+  "anime": "High (16GB+ VRAM)",
+  "stock": "Medium to High (12GB+ VRAM)",
+  "ai-generated": "Medium (8GB+ VRAM)",
+  "realistic": "High (24GB+ VRAM)",
+  "ultra-realistic": "Very High (A100 40GB+ recommended)",
+  "unreal": "High (16GB+ VRAM)"
+};
+
+// Model information
+const modelInfo = {
+  "cartoon": {
+    name: "CogVideo",
+    description: "Specialized in generating cartoon-style videos",
+    repo: "THUDM/CogVideo"
+  },
+  "anime": {
+    name: "Tune-A-Video",
+    description: "Optimized for anime-style content",
+    repo: "showlab/Tune-A-Video"
+  },
+  "stock": {
+    name: "VGen",
+    description: "Creates stock footage style videos",
+    repo: "ali-vilab/VGen"
+  },
+  "ai-generated": {
+    name: "LTX-Video",
+    description: "General purpose video generation",
+    repo: "Lightricks/LTX-Video"
+  },
+  "realistic": {
+    name: "Mora",
+    description: "Creates realistic, high-quality videos",
+    repo: "lichao-sun/Mora"
+  },
+  "ultra-realistic": {
+    name: "OpenSora",
+    description: "Ultra high-quality realistic videos",
+    repo: "hpcaitech/Open-Sora"
+  },
+  "unreal": {
+    name: "StepVideo",
+    description: "Stylized, creative video generation",
+    repo: "stepfun-ai/Step-Video-TI2V"
+  }
+};
 
 const VideoGenerator = ({ 
   onGenerate, 
@@ -63,6 +120,14 @@ const VideoGenerator = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <Alert className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>GPU Resources Required</AlertTitle>
+          <AlertDescription>
+            Generating AI videos requires GPU resources. Currently using placeholder videos until GPU infrastructure is available.
+          </AlertDescription>
+        </Alert>
+        
         <Tabs defaultValue="content" className="w-full">
           <TabsList className="grid grid-cols-3 mb-4">
             <TabsTrigger value="content" className="flex items-center gap-2">
@@ -124,60 +189,193 @@ const VideoGenerator = ({
 
           <TabsContent value="style" className="space-y-4">
             <div>
-              <Label className="text-sm mb-3 block">Video Style</Label>
+              <Label className="text-sm mb-3 block">Video Style / AI Model</Label>
               <RadioGroup
                 value={options.style}
                 onValueChange={(value) => setOptions({...options, style: value as any})}
                 className="grid grid-cols-2 md:grid-cols-3 gap-3"
               >
-                <Label 
-                  htmlFor="cartoon-style"
-                  className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${options.style === 'cartoon' ? 'border-accent bg-accent/10' : 'border-border'}`}
-                >
-                  <RadioGroupItem id="cartoon-style" value="cartoon" className="sr-only" />
-                  <div className="w-full h-16 rounded bg-gradient-to-r from-blue-400 to-green-400 mb-2"></div>
-                  <span>Cartoon</span>
-                </Label>
-                <Label 
-                  htmlFor="anime-style"
-                  className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${options.style === 'anime' ? 'border-accent bg-accent/10' : 'border-border'}`}
-                >
-                  <RadioGroupItem id="anime-style" value="anime" className="sr-only" />
-                  <div className="w-full h-16 rounded bg-gradient-to-r from-pink-400 to-purple-400 mb-2"></div>
-                  <span>Anime</span>
-                </Label>
-                <Label 
-                  htmlFor="stock-style"
-                  className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${options.style === 'stock' ? 'border-accent bg-accent/10' : 'border-border'}`}
-                >
-                  <RadioGroupItem id="stock-style" value="stock" className="sr-only" />
-                  <div className="w-full h-16 rounded bg-gradient-to-r from-gray-400 to-gray-600 mb-2"></div>
-                  <span>Stock</span>
-                </Label>
-                <Label 
-                  htmlFor="ai-generated-style"
-                  className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${options.style === 'ai-generated' ? 'border-accent bg-accent/10' : 'border-border'}`}
-                >
-                  <RadioGroupItem id="ai-generated-style" value="ai-generated" className="sr-only" />
-                  <div className="w-full h-16 rounded bg-gradient-to-r from-accent to-accent-foreground mb-2"></div>
-                  <span>AI Generated</span>
-                </Label>
-                <Label 
-                  htmlFor="realistic-style"
-                  className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${options.style === 'realistic' ? 'border-accent bg-accent/10' : 'border-border'}`}
-                >
-                  <RadioGroupItem id="realistic-style" value="realistic" className="sr-only" />
-                  <div className="w-full h-16 rounded bg-gradient-to-r from-amber-500 to-red-500 mb-2"></div>
-                  <span>Realistic</span>
-                </Label>
-                <Label 
-                  htmlFor="ultra-realistic-style"
-                  className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${options.style === 'ultra-realistic' ? 'border-accent bg-accent/10' : 'border-border'}`}
-                >
-                  <RadioGroupItem id="ultra-realistic-style" value="ultra-realistic" className="sr-only" />
-                  <div className="w-full h-16 rounded bg-gradient-to-r from-red-600 to-yellow-500 mb-2"></div>
-                  <span>Ultra Realistic</span>
-                </Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Label 
+                        htmlFor="cartoon-style"
+                        className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${options.style === 'cartoon' ? 'border-accent bg-accent/10' : 'border-border'}`}
+                      >
+                        <RadioGroupItem id="cartoon-style" value="cartoon" className="sr-only" />
+                        <div className="w-full h-16 rounded bg-gradient-to-r from-blue-400 to-green-400 mb-2"></div>
+                        <div className="text-center">
+                          <span className="block">Cartoon</span>
+                          <span className="text-xs text-muted-foreground">{modelInfo.cartoon.name}</span>
+                        </div>
+                      </Label>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className="space-y-1 max-w-xs">
+                        <p className="font-semibold">{modelInfo.cartoon.name}</p>
+                        <p className="text-xs">{modelInfo.cartoon.description}</p>
+                        <p className="text-xs font-medium">GPU: {gpuRequirements.cartoon}</p>
+                        <p className="text-xs text-muted-foreground">Repo: {modelInfo.cartoon.repo}</p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Label 
+                        htmlFor="anime-style"
+                        className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${options.style === 'anime' ? 'border-accent bg-accent/10' : 'border-border'}`}
+                      >
+                        <RadioGroupItem id="anime-style" value="anime" className="sr-only" />
+                        <div className="w-full h-16 rounded bg-gradient-to-r from-pink-400 to-purple-400 mb-2"></div>
+                        <div className="text-center">
+                          <span className="block">Anime</span>
+                          <span className="text-xs text-muted-foreground">{modelInfo.anime.name}</span>
+                        </div>
+                      </Label>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className="space-y-1 max-w-xs">
+                        <p className="font-semibold">{modelInfo.anime.name}</p>
+                        <p className="text-xs">{modelInfo.anime.description}</p>
+                        <p className="text-xs font-medium">GPU: {gpuRequirements.anime}</p>
+                        <p className="text-xs text-muted-foreground">Repo: {modelInfo.anime.repo}</p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Label 
+                        htmlFor="stock-style"
+                        className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${options.style === 'stock' ? 'border-accent bg-accent/10' : 'border-border'}`}
+                      >
+                        <RadioGroupItem id="stock-style" value="stock" className="sr-only" />
+                        <div className="w-full h-16 rounded bg-gradient-to-r from-gray-400 to-gray-600 mb-2"></div>
+                        <div className="text-center">
+                          <span className="block">Stock</span>
+                          <span className="text-xs text-muted-foreground">{modelInfo.stock.name}</span>
+                        </div>
+                      </Label>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className="space-y-1 max-w-xs">
+                        <p className="font-semibold">{modelInfo.stock.name}</p>
+                        <p className="text-xs">{modelInfo.stock.description}</p>
+                        <p className="text-xs font-medium">GPU: {gpuRequirements.stock}</p>
+                        <p className="text-xs text-muted-foreground">Repo: {modelInfo.stock.repo}</p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Label 
+                        htmlFor="ai-generated-style"
+                        className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${options.style === 'ai-generated' ? 'border-accent bg-accent/10' : 'border-border'}`}
+                      >
+                        <RadioGroupItem id="ai-generated-style" value="ai-generated" className="sr-only" />
+                        <div className="w-full h-16 rounded bg-gradient-to-r from-accent to-accent-foreground mb-2"></div>
+                        <div className="text-center">
+                          <span className="block">AI Generated</span>
+                          <span className="text-xs text-muted-foreground">{modelInfo["ai-generated"].name}</span>
+                        </div>
+                      </Label>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className="space-y-1 max-w-xs">
+                        <p className="font-semibold">{modelInfo["ai-generated"].name}</p>
+                        <p className="text-xs">{modelInfo["ai-generated"].description}</p>
+                        <p className="text-xs font-medium">GPU: {gpuRequirements["ai-generated"]}</p>
+                        <p className="text-xs text-muted-foreground">Repo: {modelInfo["ai-generated"].repo}</p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Label 
+                        htmlFor="realistic-style"
+                        className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${options.style === 'realistic' ? 'border-accent bg-accent/10' : 'border-border'}`}
+                      >
+                        <RadioGroupItem id="realistic-style" value="realistic" className="sr-only" />
+                        <div className="w-full h-16 rounded bg-gradient-to-r from-amber-500 to-red-500 mb-2"></div>
+                        <div className="text-center">
+                          <span className="block">Realistic</span>
+                          <span className="text-xs text-muted-foreground">{modelInfo.realistic.name}</span>
+                        </div>
+                      </Label>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className="space-y-1 max-w-xs">
+                        <p className="font-semibold">{modelInfo.realistic.name}</p>
+                        <p className="text-xs">{modelInfo.realistic.description}</p>
+                        <p className="text-xs font-medium">GPU: {gpuRequirements.realistic}</p>
+                        <p className="text-xs text-muted-foreground">Repo: {modelInfo.realistic.repo}</p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Label 
+                        htmlFor="ultra-realistic-style"
+                        className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${options.style === 'ultra-realistic' ? 'border-accent bg-accent/10' : 'border-border'}`}
+                      >
+                        <RadioGroupItem id="ultra-realistic-style" value="ultra-realistic" className="sr-only" />
+                        <div className="w-full h-16 rounded bg-gradient-to-r from-red-600 to-yellow-500 mb-2"></div>
+                        <div className="text-center">
+                          <span className="block">Ultra Realistic</span>
+                          <span className="text-xs text-muted-foreground">{modelInfo["ultra-realistic"].name}</span>
+                        </div>
+                      </Label>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className="space-y-1 max-w-xs">
+                        <p className="font-semibold">{modelInfo["ultra-realistic"].name}</p>
+                        <p className="text-xs">{modelInfo["ultra-realistic"].description}</p>
+                        <p className="text-xs font-medium">GPU: {gpuRequirements["ultra-realistic"]}</p>
+                        <p className="text-xs text-muted-foreground">Repo: {modelInfo["ultra-realistic"].repo}</p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Label 
+                        htmlFor="unreal-style"
+                        className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${options.style === 'unreal' ? 'border-accent bg-accent/10' : 'border-border'}`}
+                      >
+                        <RadioGroupItem id="unreal-style" value="unreal" className="sr-only" />
+                        <div className="w-full h-16 rounded bg-gradient-to-r from-red-600 to-yellow-500 mb-2"></div>
+                        <div className="text-center">
+                          <span className="block">Unreal</span>
+                          <span className="text-xs text-muted-foreground">{modelInfo.unreal.name}</span>
+                        </div>
+                      </Label>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <div className="space-y-1 max-w-xs">
+                        <p className="font-semibold">{modelInfo.unreal.name}</p>
+                        <p className="text-xs">{modelInfo.unreal.description}</p>
+                        <p className="text-xs font-medium">GPU: {gpuRequirements.unreal}</p>
+                        <p className="text-xs text-muted-foreground">Repo: {modelInfo.unreal.repo}</p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </RadioGroup>
             </div>
           </TabsContent>
@@ -284,6 +482,10 @@ const VideoGenerator = ({
           <Wand2 className="h-4 w-4" />
           {isGenerating ? "Generating Video..." : "Generate Video"}
         </Button>
+        
+        <p className="text-xs text-muted-foreground text-center mt-2">
+          Currently using placeholder videos until GPU infrastructure is ready. The selected model is: {modelInfo[options.style].name}
+        </p>
       </CardContent>
     </Card>
   );
