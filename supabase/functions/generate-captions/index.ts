@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { Storage } from "https://deno.land/x/storage@0.1.1/mod.ts";
 
 // This function generates WebVTT captions from a script and stores them in Supabase storage
 
