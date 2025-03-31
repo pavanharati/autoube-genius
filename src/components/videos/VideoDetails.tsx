@@ -60,6 +60,20 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
     }
   };
 
+  // For demo/placeholder purposes - this would be replaced with actual video generation
+  const getPlaceholderVideo = (style: string = 'default') => {
+    // These are sample videos for demonstration purposes
+    const placeholderVideos = {
+      cartoon: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+      anime: "https://storage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+      stock: "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+      realistic: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+      default: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+    };
+    
+    return placeholderVideos[style as keyof typeof placeholderVideos] || placeholderVideos.default;
+  };
+
   if (!video) {
     return (
       <Card className="h-full">
@@ -72,6 +86,14 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
       </Card>
     );
   }
+
+  // Determine the video URL to use (real or demo placeholder)
+  const videoUrl = isValidUrl(video.videoUrl) 
+    ? video.videoUrl 
+    : getPlaceholderVideo(video.category?.toLowerCase());
+
+  // Determine if captions are available
+  const hasCaptions = isValidUrl(video.captions);
 
   return (
     <Card className="h-full">
@@ -95,39 +117,33 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
           <div className="aspect-video rounded-lg overflow-hidden bg-card relative">
             {isPlaying ? (
               <div className="relative">
-                {isValidUrl(video.videoUrl) ? (
-                  <video 
-                    src={video.videoUrl}
-                    className="w-full h-full object-cover"
-                    controls
-                    autoPlay
-                    onEnded={() => setIsPlaying(false)}
-                    onLoadedData={() => setVideoLoaded(true)}
-                    onError={() => {
-                      toast({
-                        title: "Video Error",
-                        description: "There was an error loading this video. Please try again.",
-                        variant: "destructive",
-                      });
-                      setIsPlaying(false);
-                    }}
-                  >
-                    {captionsEnabled && isValidUrl(video.captions) && (
-                      <track 
-                        kind="subtitles" 
-                        src={video.captions} 
-                        label="English" 
-                        srcLang="en" 
-                        default 
-                      />
-                    )}
-                  </video>
-                ) : (
-                  <div className="flex items-center justify-center h-64 bg-muted">
-                    <p className="text-muted-foreground">No video available</p>
-                  </div>
-                )}
-                {videoLoaded && isValidUrl(video.captions) && (
+                <video 
+                  src={videoUrl}
+                  className="w-full h-full object-cover"
+                  controls
+                  autoPlay
+                  onEnded={() => setIsPlaying(false)}
+                  onLoadedData={() => setVideoLoaded(true)}
+                  onError={() => {
+                    toast({
+                      title: "Video Error",
+                      description: "There was an error loading this video. Please try again.",
+                      variant: "destructive",
+                    });
+                    setIsPlaying(false);
+                  }}
+                >
+                  {captionsEnabled && hasCaptions && (
+                    <track 
+                      kind="subtitles" 
+                      src={video.captions} 
+                      label="English" 
+                      srcLang="en" 
+                      default 
+                    />
+                  )}
+                </video>
+                {videoLoaded && hasCaptions && (
                   <div className="absolute bottom-16 right-4 flex items-center gap-2 bg-black/70 text-white p-2 rounded-md">
                     <Label htmlFor="captions-toggle" className="text-xs">Captions</Label>
                     <Switch 
@@ -152,17 +168,15 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
                   </div>
                 )}
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  {isValidUrl(video.videoUrl) && (
-                    <Button 
-                      variant="outline" 
-                      size="lg" 
-                      className="gap-2"
-                      onClick={handlePlayVideo}
-                    >
-                      <Play className="h-5 w-5" />
-                      Play Video
-                    </Button>
-                  )}
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="gap-2"
+                    onClick={handlePlayVideo}
+                  >
+                    <Play className="h-5 w-5" />
+                    Play Video
+                  </Button>
                 </div>
               </div>
             )}
