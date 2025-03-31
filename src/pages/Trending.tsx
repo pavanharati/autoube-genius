@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   TrendingUp, 
@@ -57,7 +56,6 @@ const Trending = () => {
   const loadTrendingTopics = async () => {
     setIsLoading(true);
     try {
-      // In a real app, this would fetch real trending topics
       const topics = await fetchTrendingTopics(selectedNiche, selectedPeriod);
       setTrendingTopics(topics);
     } catch (error) {
@@ -75,7 +73,6 @@ const Trending = () => {
   const handleTopicSelect = async (topic: TrendingTopic) => {
     setSelectedTopic(topic);
     try {
-      // In a real app, this would fetch real topic analysis
       const analysisData = await analyzeTopicPotential(topic.title);
       setAnalysis(analysisData);
       setIsDialogOpen(true);
@@ -94,11 +91,9 @@ const Trending = () => {
     
     setIsGeneratingTitles(true);
     try {
-      // Mock generating multiple title options
       const titles = [];
       
       for (let i = 0; i < 5; i++) {
-        // In a real app, this would generate real titles
         const title = await generateCatchyTitle(selectedTopic.title, selectedNiche);
         titles.push(title);
       }
@@ -124,6 +119,18 @@ const Trending = () => {
     });
   };
 
+  const handleSearchSubmit = () => {
+    if (searchQuery.trim()) {
+      const filteredResults = trendingTopics.filter((topic) => 
+        topic.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        topic.category?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setTrendingTopics(filteredResults.length > 0 ? filteredResults : trendingTopics);
+    } else {
+      loadTrendingTopics();
+    }
+  };
+
   const filteredTopics = searchQuery
     ? trendingTopics.filter((topic) =>
         topic.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -141,13 +148,10 @@ const Trending = () => {
 
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="relative w-full md:w-auto md:flex-1 max-w-xl">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5" />
-          <Input
-            type="text"
-            placeholder="Search for topics..."
+          <SearchBar 
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            onChange={(e) => setSearchQuery(e)}
+            onSubmit={handleSearchSubmit}
           />
         </div>
 
@@ -449,7 +453,6 @@ const Trending = () => {
                             variant="ghost" 
                             size="icon"
                             onClick={() => {
-                              // In a real app, this would navigate to create a video with this title
                               toast({
                                 title: "Title selected",
                                 description: "The title has been selected for your new video",
