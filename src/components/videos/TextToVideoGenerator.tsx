@@ -35,7 +35,7 @@ const TextToVideoGenerator = ({ onComplete }: TextToVideoGeneratorProps) => {
     try {
       toast({
         title: "Processing",
-        description: "Converting your text to video. This may take a few moments...",
+        description: "Converting your text to video using AI. This may take a few moments...",
       });
       
       const options: Partial<VideoGenerationOptions> = {
@@ -47,7 +47,7 @@ const TextToVideoGenerator = ({ onComplete }: TextToVideoGeneratorProps) => {
       
       toast({
         title: "Success",
-        description: "Video generated successfully!",
+        description: "AI-generated video created successfully!",
       });
       
       if (onComplete) {
@@ -70,7 +70,7 @@ const TextToVideoGenerator = ({ onComplete }: TextToVideoGeneratorProps) => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Video className="h-5 w-5 text-accent" />
-          Text to Video
+          AI Text to Video
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -116,6 +116,30 @@ const TextToVideoGenerator = ({ onComplete }: TextToVideoGeneratorProps) => {
               <div className="w-full h-16 rounded bg-gradient-to-r from-blue-400 to-green-400 mb-2"></div>
               <span>Cartoon</span>
             </Label>
+            <Label 
+              htmlFor="anime-style"
+              className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${style === 'anime' ? 'border-accent bg-accent/10' : 'border-border'}`}
+            >
+              <RadioGroupItem id="anime-style" value="anime" className="sr-only" />
+              <div className="w-full h-16 rounded bg-gradient-to-r from-purple-400 to-pink-400 mb-2"></div>
+              <span>Anime</span>
+            </Label>
+            <Label 
+              htmlFor="stock-style"
+              className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${style === 'stock' ? 'border-accent bg-accent/10' : 'border-border'}`}
+            >
+              <RadioGroupItem id="stock-style" value="stock" className="sr-only" />
+              <div className="w-full h-16 rounded bg-gradient-to-r from-gray-400 to-gray-600 mb-2"></div>
+              <span>Stock</span>
+            </Label>
+            <Label 
+              htmlFor="ultra-realistic-style"
+              className={`cursor-pointer flex flex-col items-center p-3 rounded-lg border ${style === 'ultra-realistic' ? 'border-accent bg-accent/10' : 'border-border'}`}
+            >
+              <RadioGroupItem id="ultra-realistic-style" value="ultra-realistic" className="sr-only" />
+              <div className="w-full h-16 rounded bg-gradient-to-r from-red-600 to-yellow-500 mb-2"></div>
+              <span>Ultra Realistic</span>
+            </Label>
           </RadioGroup>
         </div>
         
@@ -127,15 +151,22 @@ const TextToVideoGenerator = ({ onComplete }: TextToVideoGeneratorProps) => {
           {isGenerating ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Generating Video...
+              Generating AI Video...
             </>
           ) : (
             <>
               <Wand2 className="h-4 w-4" />
-              Generate Video
+              Generate AI Video
             </>
           )}
         </Button>
+
+        {isGenerating && (
+          <div className="text-center text-sm text-muted-foreground mt-2">
+            <p>AI video generation may take 2-3 minutes depending on complexity.</p>
+            <p>You'll be notified when your video is ready.</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

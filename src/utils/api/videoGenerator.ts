@@ -87,7 +87,7 @@ export const textToVideo = async (
     const { data: scriptData, error: scriptError } = await supabase.functions.invoke("generate-script", {
       body: {
         topic: prompt,
-        style: options?.style === 'entertaining' ? 'entertaining' : 'informative',
+        style: options?.style === 'informative' ? 'informative' : 'entertaining',
         targetLength: "medium"
       }
     });

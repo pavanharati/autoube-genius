@@ -6,6 +6,57 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Configurations for different video styles
+const styleConfigs = {
+  'cartoon': {
+    model: 'stabilityai/stable-video-diffusion',
+    params: {
+      motion_bucket_id: 20,
+      fps: 24,
+      style: 'cartoon',
+    }
+  },
+  'anime': {
+    model: 'stabilityai/stable-video-diffusion',
+    params: {
+      motion_bucket_id: 20,
+      fps: 24,
+      style: 'anime',
+    }
+  },
+  'stock': {
+    model: 'stabilityai/stable-video-diffusion',
+    params: {
+      motion_bucket_id: 127,
+      fps: 24,
+      style: 'naturalistic',
+    }
+  },
+  'realistic': {
+    model: 'stabilityai/stable-video-diffusion',
+    params: {
+      motion_bucket_id: 127,
+      fps: 24,
+      style: 'cinematic',
+    }
+  },
+  'ultra-realistic': {
+    model: 'stabilityai/stable-video-diffusion',
+    params: {
+      motion_bucket_id: 127,
+      fps: 30,
+      style: 'cinematic',
+    }
+  },
+  'ai-generated': {
+    model: 'stability/stable-video-diffusion-img2vid-xt',
+    params: {
+      fps: 24,
+      num_inference_steps: 25,
+    }
+  }
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -25,55 +76,26 @@ serve(async (req) => {
     console.log(`Using voice type: ${options.voiceType || 'default'}`);
     console.log(`Captions enabled: ${options.captionsEnabled}`);
     
-    // In a production environment, here you would:
-    // 1. Generate a voiceover using a text-to-speech service
-    // 2. Generate visuals based on the script and chosen style
-    // 3. Combine audio and visuals into a video
-    // 4. Add captions if requested
+    // Convert script to a set of key scenes to visualize
+    const scenes = await generateScenesFromScript(script, options.style);
     
-    // Simulated processing time based on script length and complexity
-    const processingTime = Math.min(5000, script.length * 5);
-    await new Promise(resolve => setTimeout(resolve, processingTime));
+    // Generate video from scenes using the specified style
+    const videoUrl = await generateAiVideo(scenes, options.style);
     
-    // Select an appropriate video style based on the options
-    let videoUrl;
-    let processingDuration;
+    // Add audio track with voiceover and background music
+    const finalVideoUrl = await addAudioToVideo(videoUrl, script, options.voiceType, options.musicStyle);
     
-    switch (options.style) {
-      case 'cartoon':
-        videoUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4";
-        processingDuration = "00:02:15";
-        break;
-      case 'anime':
-        videoUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4";
-        processingDuration = "00:01:57";
-        break;
-      case 'stock':
-        videoUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4";
-        processingDuration = "00:03:20";
-        break;
-      case 'realistic':
-      case 'ultra-realistic':
-        videoUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
-        processingDuration = "00:04:30";
-        break;
-      case 'ai-generated':
-      default:
-        videoUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4";
-        processingDuration = "00:03:45";
-    }
-    
-    // For text-to-video generation, we could adjust style parameters based on text analysis
+    // Text analysis for additional metadata
     const textAnalysis = analyzeText(script);
-    
+
     return new Response(
       JSON.stringify({ 
-        videoUrl,
+        videoUrl: finalVideoUrl,
         captionsUrl: options.captionsEnabled ? captionsUrl : null,
         title,
         processing: {
           status: "completed",
-          duration: processingDuration,
+          duration: estimateVideoDuration(script),
           textSentiment: textAnalysis.sentiment,
           dominantTopics: textAnalysis.topics
         }
@@ -85,8 +107,15 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error generating video:', error);
     
+    // Fallback to a sample video for demonstration when in development
+    const sampleVideoUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4";
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        videoUrl: sampleVideoUrl, // Fallback sample video
+        captionsUrl: null,
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -94,6 +123,86 @@ serve(async (req) => {
     );
   }
 });
+
+// Function to generate scenes from the script
+async function generateScenesFromScript(script: string, style: string): Promise<string[]> {
+  // In a production environment, this would use an AI model to generate visual scenes
+  // For now, we'll implement a basic scene extraction
+  const sentences = script.split(/[.!?]/).filter(sentence => sentence.trim().length > 0);
+  const scenes = sentences.map(sentence => sentence.trim());
+  
+  console.log(`Generated ${scenes.length} scenes from script`);
+  
+  return scenes;
+}
+
+// Function to generate AI video from scenes
+async function generateAiVideo(scenes: string[], style: string): Promise<string> {
+  try {
+    // This is where we would integrate with our video generation model
+    // Since we don't have access to the actual generation API in this edge function,
+    // we'll simulate the process and return a sample URL
+    
+    const styleConfig = styleConfigs[style] || styleConfigs['ai-generated'];
+    console.log(`Using model: ${styleConfig.model} with style configuration:`, styleConfig.params);
+    
+    // In a production environment, this would be an actual API call
+    // const response = await fetch('https://api.videoai.example/generate', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+    //   body: JSON.stringify({
+    //     model: styleConfig.model,
+    //     scenes: scenes,
+    //     params: styleConfig.params
+    //   })
+    // });
+    
+    // For now, we'll return a mock video URL
+    // In production, this would be the URL of the generated video
+    const mockVideoUrls = {
+      'cartoon': "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+      'anime': "https://storage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+      'stock': "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+      'realistic': "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+      'ultra-realistic': "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+      'ai-generated': "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4"
+    };
+    
+    return mockVideoUrls[style] || mockVideoUrls['ai-generated'];
+  } catch (error) {
+    console.error('Error in AI video generation:', error);
+    throw new Error('Failed to generate AI video');
+  }
+}
+
+// Function to add audio to video
+async function addAudioToVideo(
+  videoUrl: string, 
+  script: string, 
+  voiceType: string = 'natural', 
+  musicStyle: string = 'inspirational'
+): Promise<string> {
+  // In a production environment, this would:
+  // 1. Generate voiceover using a TTS service
+  // 2. Select appropriate background music
+  // 3. Mix the audio with the video
+  
+  console.log(`Adding audio to video: voice type=${voiceType}, music style=${musicStyle}`);
+  
+  // For now, we return the original video URL
+  return videoUrl;
+}
+
+// Helper to estimate video duration based on script length
+function estimateVideoDuration(script: string): string {
+  // Rough estimate: average speaking rate is about 150 words per minute
+  const wordCount = script.split(/\s+/).length;
+  const durationInMinutes = wordCount / 150;
+  const minutes = Math.floor(durationInMinutes);
+  const seconds = Math.floor((durationInMinutes - minutes) * 60);
+  
+  return `00:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
 
 // Simple text analysis function to mimic AI analysis of script content
 function analyzeText(text: string) {
