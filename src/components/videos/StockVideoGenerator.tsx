@@ -243,7 +243,7 @@ const StockVideoGenerator = ({
         {generatedVideoClips.length > 0 && (
           <div className="mt-4">
             <h3 className="text-sm font-medium mb-2">Generated Video Clips</h3>
-            <div className="grid grid-cols-1 gap-2">
+            <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
               {generatedVideoClips.map((clip, index) => (
                 <div key={index} className="text-xs text-blue-500 truncate hover:text-blue-700">
                   <a href={clip} target="_blank" rel="noopener noreferrer">

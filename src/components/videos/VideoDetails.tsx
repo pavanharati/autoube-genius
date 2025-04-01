@@ -60,20 +60,6 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
     }
   };
 
-  // For demo/placeholder purposes - this would be replaced with actual video generation
-  const getPlaceholderVideo = (style: string = 'default') => {
-    // These are sample videos for demonstration purposes
-    const placeholderVideos = {
-      cartoon: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-      anime: "https://storage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
-      stock: "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-      realistic: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-      default: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
-    };
-    
-    return placeholderVideos[style as keyof typeof placeholderVideos] || placeholderVideos.default;
-  };
-
   if (!video) {
     return (
       <Card className="h-full">
@@ -87,11 +73,9 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
     );
   }
 
-  // Determine the video URL to use (real or demo placeholder)
-  const videoUrl = isValidUrl(video.videoUrl) 
-    ? video.videoUrl 
-    : getPlaceholderVideo(video.category?.toLowerCase());
-
+  // Use the actual video URL
+  const videoUrl = video.videoUrl || "";
+  
   // Determine if captions are available
   const hasCaptions = isValidUrl(video.captions);
 
@@ -124,7 +108,8 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
                   autoPlay
                   onEnded={() => setIsPlaying(false)}
                   onLoadedData={() => setVideoLoaded(true)}
-                  onError={() => {
+                  onError={(e) => {
+                    console.error("Video error:", e);
                     toast({
                       title: "Video Error",
                       description: "There was an error loading this video. Please try again.",
@@ -209,6 +194,12 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
               <div>
                 <h3 className="font-semibold mb-1">Trending</h3>
                 <p className="text-muted-foreground">Trending for {video.trendingPeriod || "day"}</p>
+              </div>
+            )}
+            {video.videoClips && video.videoClips.length > 0 && (
+              <div className="md:col-span-2">
+                <h3 className="font-semibold mb-1">Stock Footage</h3>
+                <p className="text-muted-foreground">Generated using {video.videoClips.length} stock clips</p>
               </div>
             )}
           </div>

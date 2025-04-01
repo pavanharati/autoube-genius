@@ -140,8 +140,6 @@ export const generateStockFootageVideo = async (
 ): Promise<{ videoUrl: string, captionsUrl: string, videoClips?: string[], durationInSeconds?: number }> => {
   try {
     console.log("Generating stock footage video:", title);
-    console.log("Using stock source:", options.stockSource);
-    console.log("Target duration:", options.duration, "minutes");
     
     // Generate captions for the script
     const captionsResponse = await generateCaptions(script);
@@ -156,7 +154,7 @@ export const generateStockFootageVideo = async (
         musicStyle: options.musicStyle || "inspirational",
         captionsEnabled: options.captionsEnabled !== false,
         captionsUrl: captionsResponse.captionsUrl,
-        fullVideo: true // Ensure we're requesting a full-length video
+        fullVideo: true // Always create a full video
       }
     });
     
