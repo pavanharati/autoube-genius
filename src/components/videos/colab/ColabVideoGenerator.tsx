@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileVideo, Upload, ExternalLink, Beaker, ArrowRight, CheckCircle } from "lucide-react";
+import { FileVideo, Upload, ExternalLink, Beaker, ArrowRight, CheckCircle, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsContent, TabsTrigger } from "@/components/ui/tabs";
 import ModelCodeSnippets from "./ModelCodeSnippets";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface ColabVideoGeneratorProps {
   onComplete?: (result: { videoUrl: string; captionsUrl?: string; title: string }) => void;
@@ -104,7 +105,144 @@ const ColabVideoGenerator = ({ onComplete }: ColabVideoGeneratorProps) => {
     switch (currentStep) {
       case 1:
         return (
-          <ModelCodeSnippets onSelectSnippet={handleModelSelect} />
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Info className="h-4 w-4 text-blue-500" />
+              <p className="text-sm text-muted-foreground">
+                You can use Google Colab's free GPU resources to generate AI videos.
+                Select a method below to get started.
+              </p>
+            </div>
+            <Tabs defaultValue="premade">
+              <TabsList className="grid grid-cols-2 mb-4">
+                <TabsTrigger value="premade">Pre-made Templates</TabsTrigger>
+                <TabsTrigger value="advanced">Advanced Method</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="premade" className="space-y-4">
+                <ModelCodeSnippets onSelectSnippet={handleModelSelect} />
+              </TabsContent>
+              
+              <TabsContent value="advanced">
+                <div className="space-y-4 bg-accent/10 p-4 rounded-md">
+                  <h3 className="text-lg font-medium">Step-by-Step: AI Video Generation for Free</h3>
+                  <p className="text-sm">
+                    Follow these instructions to use Google Colab's free GPU resources and open-source
+                    models to generate AI videos. Click each step to expand.
+                  </p>
+                  
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="step1">
+                      <AccordionTrigger>
+                        Step 1: Set Up Google Colab with Free GPU
+                      </AccordionTrigger>
+                      <AccordionContent className="text-sm">
+                        <ol className="list-decimal list-inside space-y-2">
+                          <li>Open Google Colab</li>
+                          <li>Go to Runtime → Change runtime type → Select GPU</li>
+                          <li>Run this to check if GPU is active:</li>
+                        </ol>
+                        <pre className="bg-secondary/50 p-2 rounded-md my-2 text-xs overflow-auto">
+                          import torch{'\n'}
+                          print("GPU Available:", torch.cuda.is_available())
+                        </pre>
+                      </AccordionContent>
+                    </AccordionItem>
+                    
+                    <AccordionItem value="step2">
+                      <AccordionTrigger>
+                        Step 2: Install Dependencies & AI Model
+                      </AccordionTrigger>
+                      <AccordionContent className="text-sm">
+                        <p>Run this in Colab to install Stable Video Diffusion:</p>
+                        <pre className="bg-secondary/50 p-2 rounded-md my-2 text-xs overflow-auto">
+                          !pip install diffusers transformers accelerate torch torchvision torchaudio ffmpeg-python{'\n'}
+                          !pip install imageio[ffmpeg] moviepy
+                        </pre>
+                        <p className="mt-2">Now, download the AI video model (Stable Video Diffusion):</p>
+                        <pre className="bg-secondary/50 p-2 rounded-md my-2 text-xs overflow-auto">
+                          from diffusers import StableVideoDiffusionPipeline{'\n'}
+                          import torch{'\n\n'}
+                          model_id = "stabilityai/stable-video-diffusion-img2vid"{'\n'}
+                          pipe = StableVideoDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16){'\n'}
+                          pipe.to("cuda")
+                        </pre>
+                      </AccordionContent>
+                    </AccordionItem>
+                    
+                    <AccordionItem value="step3">
+                      <AccordionTrigger>
+                        Step 3: Generate AI Video from an Image
+                      </AccordionTrigger>
+                      <AccordionContent className="text-sm">
+                        <pre className="bg-secondary/50 p-2 rounded-md my-2 text-xs overflow-auto">
+                          from PIL import Image{'\n\n'}
+                          image = Image.open("your_image.png")  # Replace with any image from Google Drive{'\n'}
+                          video = pipe(image, num_frames=24)  # 24 frames for 1 second of video{'\n\n'}
+                          video.save("output.mp4")
+                        </pre>
+                      </AccordionContent>
+                    </AccordionItem>
+                    
+                    <AccordionItem value="step4">
+                      <AccordionTrigger>
+                        Step 4: Add AI Voiceover (Text-to-Speech)
+                      </AccordionTrigger>
+                      <AccordionContent className="text-sm">
+                        <pre className="bg-secondary/50 p-2 rounded-md my-2 text-xs overflow-auto">
+                          !pip install TTS{'\n'}
+                          from TTS.api import TTS{'\n\n'}
+                          tts = TTS("tts_models/en/ljspeech/tacotron2-DDC", gpu=True){'\n'}
+                          tts.tts_to_file(text="This is your AI-generated video", file_path="voiceover.wav")
+                        </pre>
+                      </AccordionContent>
+                    </AccordionItem>
+                    
+                    <AccordionItem value="step5">
+                      <AccordionTrigger>
+                        Step 5: Merge AI Video & Voiceover
+                      </AccordionTrigger>
+                      <AccordionContent className="text-sm">
+                        <pre className="bg-secondary/50 p-2 rounded-md my-2 text-xs overflow-auto">
+                          !ffmpeg -i output.mp4 -i voiceover.wav -c:v copy -c:a aac final_video.mp4
+                        </pre>
+                      </AccordionContent>
+                    </AccordionItem>
+                    
+                    <AccordionItem value="step6">
+                      <AccordionTrigger>
+                        Step 6: Save to Google Drive & Import
+                      </AccordionTrigger>
+                      <AccordionContent className="text-sm">
+                        <pre className="bg-secondary/50 p-2 rounded-md my-2 text-xs overflow-auto">
+                          from google.colab import drive{'\n'}
+                          drive.mount('/content/drive'){'\n\n'}
+                          # Copy the final video to Google Drive{'\n'}
+                          !cp final_video.mp4 /content/drive/My\ Drive/
+                        </pre>
+                        <p className="mt-2">After running the code above:</p>
+                        <ol className="list-decimal list-inside space-y-2">
+                          <li>Open your Google Drive</li>
+                          <li>Right-click on the video and select "Get link"</li>
+                          <li>Set to "Anyone with the link"</li>
+                          <li>Copy the link and paste it in the import step here</li>
+                        </ol>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                  
+                  <Button 
+                    variant="default" 
+                    className="w-full mt-2"
+                    onClick={handleOpenColab}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Open Google Colab
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
         );
       case 2:
         return (
@@ -206,7 +344,7 @@ const ColabVideoGenerator = ({ onComplete }: ColabVideoGeneratorProps) => {
       <CardContent className="space-y-4">
         <div className="flex justify-between mb-2">
           <Badge variant={currentStep >= 1 ? "default" : "outline"} className="flex gap-1">
-            <span>1.</span> Select Model
+            <span>1.</span> Select Method
           </Badge>
           <ArrowRight className="h-4 w-4 text-muted-foreground" />
           <Badge variant={currentStep >= 2 ? "default" : "outline"} className="flex gap-1">
