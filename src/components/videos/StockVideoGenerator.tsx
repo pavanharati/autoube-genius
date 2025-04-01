@@ -13,7 +13,7 @@ import { generateStockFootageVideo } from "@/utils/api/videoGenerator";
 import { Slider } from "@/components/ui/slider";
 
 interface StockVideoGeneratorProps {
-  onComplete?: (result: { videoUrl: string; captionsUrl: string; title: string }) => void;
+  onComplete?: (result: { videoUrl: string; captionsUrl: string; title: string; durationInSeconds?: number }) => void;
   initialScript?: string;
   initialTitle?: string;
 }
@@ -31,6 +31,7 @@ const StockVideoGenerator = ({
   const [musicStyle, setMusicStyle] = useState("inspirational");
   const [captionsEnabled, setCaptionsEnabled] = useState(true);
   const [generatedVideoClips, setGeneratedVideoClips] = useState<string[]>([]);
+  const [generationProgress, setGenerationProgress] = useState(0);
   const { toast } = useToast();
 
   const handleGenerate = async () => {
@@ -53,12 +54,21 @@ const StockVideoGenerator = ({
     }
     
     setIsGenerating(true);
+    setGenerationProgress(0);
     
     try {
       toast({
         title: "Processing",
         description: `Generating your stock footage video. This may take a few minutes...`,
       });
+      
+      // Simulate progress updates
+      const progressInterval = setInterval(() => {
+        setGenerationProgress(prev => {
+          const newProgress = prev + Math.random() * 15;
+          return newProgress > 95 ? 95 : newProgress;
+        });
+      }, 3000);
       
       const result = await generateStockFootageVideo(
         title,
@@ -70,6 +80,9 @@ const StockVideoGenerator = ({
           captionsEnabled
         }
       );
+      
+      clearInterval(progressInterval);
+      setGenerationProgress(100);
       
       // Store any returned video clips for display
       if (result.videoClips && result.videoClips.length > 0) {
@@ -85,7 +98,8 @@ const StockVideoGenerator = ({
         onComplete({
           videoUrl: result.videoUrl,
           captionsUrl: result.captionsUrl,
-          title
+          title,
+          durationInSeconds: result.durationInSeconds
         });
       }
     } catch (error) {
@@ -202,7 +216,7 @@ const StockVideoGenerator = ({
           {isGenerating ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Generating Stock Video...
+              Generating Stock Video... {Math.round(generationProgress)}%
             </>
           ) : (
             <>
@@ -214,6 +228,9 @@ const StockVideoGenerator = ({
         
         {isGenerating ? (
           <div className="text-center text-sm text-muted-foreground mt-2">
+            <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+              <div className="bg-accent h-2.5 rounded-full transition-all duration-500 ease-out" style={{ width: `${generationProgress}%` }}></div>
+            </div>
             <p>Finding and composing stock footage takes time.</p>
             <p>For a {targetDuration} minute video, this could take 3-5 minutes.</p>
           </div>

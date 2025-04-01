@@ -18,7 +18,6 @@ const Videos = () => {
   const [showTextToVideo, setShowTextToVideo] = useState(false);
   const [showStockVideoGenerator, setShowStockVideoGenerator] = useState(false);
   
-  // Mock videos data with sample video URLs and captions
   const [videos, setVideos] = useState<Video[]>([
     {
       id: "1",
@@ -121,13 +120,24 @@ const Videos = () => {
     setShowTextToVideo(false);
   };
 
-  const handleStockVideoComplete = async (result: { videoUrl: string; captionsUrl: string; title: string }) => {
+  const formatDuration = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+  };
+
+  const handleStockVideoComplete = async (result: { 
+    videoUrl: string; 
+    captionsUrl: string; 
+    title: string;
+    durationInSeconds?: number;
+  }) => {
     const newVideo: Video = {
       id: (videos.length + 1).toString(),
       title: result.title,
       thumbnail: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05",
       status: "Ready",
-      duration: "10:00",
+      duration: result.durationInSeconds ? formatDuration(result.durationInSeconds) : "10:00",
       uploadDate: new Date().toISOString().split('T')[0],
       videoUrl: result.videoUrl,
       captions: result.captionsUrl,

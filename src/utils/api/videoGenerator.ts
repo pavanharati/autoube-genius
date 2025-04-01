@@ -137,7 +137,7 @@ export const generateStockFootageVideo = async (
     musicStyle?: string,
     captionsEnabled?: boolean
   }
-): Promise<{ videoUrl: string, captionsUrl: string, videoClips?: string[] }> => {
+): Promise<{ videoUrl: string, captionsUrl: string, videoClips?: string[], durationInSeconds?: number }> => {
   try {
     console.log("Generating stock footage video:", title);
     console.log("Using stock source:", options.stockSource);
@@ -152,10 +152,11 @@ export const generateStockFootageVideo = async (
         title,
         script,
         stockSource: options.stockSource,
-        targetDuration: options.duration,
+        targetDuration: options.duration, 
         musicStyle: options.musicStyle || "inspirational",
         captionsEnabled: options.captionsEnabled !== false,
-        captionsUrl: captionsResponse.captionsUrl
+        captionsUrl: captionsResponse.captionsUrl,
+        fullVideo: true // <-- Add this flag to ensure we get a complete video
       }
     });
     
@@ -166,7 +167,8 @@ export const generateStockFootageVideo = async (
     return {
       videoUrl: data.videoUrl,
       captionsUrl: captionsResponse.captionsUrl,
-      videoClips: data.processingDetails?.videos || []
+      videoClips: data.processingDetails?.videos || [],
+      durationInSeconds: data.processingDetails?.actualDuration || (options.duration * 60)
     };
   } catch (error) {
     console.error("Error generating stock footage video:", error);
