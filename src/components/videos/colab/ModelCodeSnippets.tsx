@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent } from "@/components/ui/card";
 
 const CodeSnippets = {
   deepDream: `!git clone https://github.com/google/deepdream.git
@@ -153,8 +154,23 @@ interface ModelCodeSnippetsProps {
   onSelectSnippet?: (code: string) => void;
 }
 
+const ModelNames = {
+  deepDream: "DeepDream Video Generator",
+  t2v: "Text-to-Video Generator",
+  firstOrderMotion: "First Order Motion Model",
+  stableDiffusion: "Stable Diffusion"
+};
+
+const ModelDescriptions = {
+  deepDream: "Create trippy, dream-like visual effects and animations",
+  t2v: "Generate videos directly from text descriptions",
+  firstOrderMotion: "Animate still images using motion from a driving video",
+  stableDiffusion: "Create high-quality video frames with stable diffusion"
+};
+
 const ModelCodeSnippets = ({ onSelectSnippet }: ModelCodeSnippetsProps) => {
   const [selectedModel, setSelectedModel] = useState<string>("deepDream");
+  const [viewMode, setViewMode] = useState<"grid" | "code">("grid");
   const { toast } = useToast();
 
   const handleCopyCode = () => {
@@ -164,6 +180,41 @@ const ModelCodeSnippets = ({ onSelectSnippet }: ModelCodeSnippetsProps) => {
       description: "The code snippet has been copied to your clipboard",
     });
   };
+
+  const handleModelClick = (modelKey: string) => {
+    setSelectedModel(modelKey);
+    if (viewMode === "grid" && onSelectSnippet) {
+      onSelectSnippet(modelKey);
+    } else {
+      setViewMode("code");
+    }
+  };
+
+  if (viewMode === "grid") {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {(Object.keys(ModelNames) as Array<keyof typeof ModelNames>).map((modelKey) => (
+            <Card 
+              key={modelKey} 
+              className="cursor-pointer hover:border-accent transition-colors"
+              onClick={() => handleModelClick(modelKey)}
+            >
+              <CardContent className="p-4">
+                <h3 className="font-medium">{ModelNames[modelKey]}</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {ModelDescriptions[modelKey]}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Select a model to start generating your video
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -200,8 +251,26 @@ const ModelCodeSnippets = ({ onSelectSnippet }: ModelCodeSnippetsProps) => {
         </Button>
       </div>
       
+      <div className="flex justify-between">
+        <Button
+          variant="outline"
+          onClick={() => setViewMode("grid")}
+        >
+          Back to Models
+        </Button>
+        
+        {onSelectSnippet && (
+          <Button
+            variant="default"
+            onClick={() => onSelectSnippet(selectedModel)}
+          >
+            Use This Model
+          </Button>
+        )}
+      </div>
+      
       <p className="text-xs text-muted-foreground">
-        Run this code in Google Colab to generate a video using the {selectedModel} model,
+        Run this code in Google Colab to generate a video using the {ModelNames[selectedModel as keyof typeof ModelNames]} model,
         then upload it to your videos collection.
       </p>
     </div>

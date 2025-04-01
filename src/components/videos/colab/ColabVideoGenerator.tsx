@@ -2,12 +2,14 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileVideo, Upload, ExternalLink, Beaker } from "lucide-react";
+import { FileVideo, Upload, ExternalLink, Beaker, ArrowRight, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsContent, TabsTrigger } from "@/components/ui/tabs";
 import ModelCodeSnippets from "./ModelCodeSnippets";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
 interface ColabVideoGeneratorProps {
   onComplete?: (result: { videoUrl: string; captionsUrl?: string; title: string }) => void;
@@ -17,10 +19,29 @@ const ColabVideoGenerator = ({ onComplete }: ColabVideoGeneratorProps) => {
   const [title, setTitle] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [isImporting, setIsImporting] = useState(false);
+  const [currentStep, setCurrentStep] = useState<number>(1);
+  const [selectedModel, setSelectedModel] = useState<string>("");
   const { toast } = useToast();
 
-  // Colab notebook URL that creates a blank notebook
-  const colabNotebookUrl = "https://colab.research.google.com/";
+  // Colab notebook URL with pre-configured template
+  const getColabNotebookUrl = () => {
+    // Base Colab URL
+    let url = "https://colab.research.google.com/";
+    
+    // If a model is selected, we can potentially add parameters to open a pre-configured notebook
+    // For now, we just open a blank notebook, but this could be enhanced to open specific templates
+    return url;
+  };
+
+  const handleModelSelect = (model: string) => {
+    setSelectedModel(model);
+    setCurrentStep(2);
+  };
+
+  const handleOpenColab = () => {
+    window.open(getColabNotebookUrl(), "_blank");
+    setCurrentStep(3);
+  };
 
   const handleImportVideo = async () => {
     if (!title.trim()) {
@@ -58,6 +79,10 @@ const ColabVideoGenerator = ({ onComplete }: ColabVideoGeneratorProps) => {
         title: "Success",
         description: "Video imported successfully!",
       });
+      
+      // Reset workflow for next time
+      setCurrentStep(1);
+      setSelectedModel("");
     } catch (error) {
       console.error("Error importing video:", error);
       toast({
@@ -70,6 +95,101 @@ const ColabVideoGenerator = ({ onComplete }: ColabVideoGeneratorProps) => {
     }
   };
 
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <ModelCodeSnippets onSelectSnippet={handleModelSelect} />
+        );
+      case 2:
+        return (
+          <div className="space-y-4">
+            <div className="bg-accent/20 p-4 rounded-md space-y-3">
+              <h3 className="font-medium">Generate Video with {selectedModel}</h3>
+              <ol className="list-decimal list-inside space-y-2 text-sm">
+                <li>Click the button below to open Google Colab</li>
+                <li>Copy the {selectedModel} code into the notebook</li>
+                <li>Run the notebook cells (press play button or Shift+Enter)</li>
+                <li>The generated video will be saved to your Google Drive</li>
+              </ol>
+              
+              <Button 
+                variant="default" 
+                className="mt-2 w-full gap-2"
+                onClick={handleOpenColab}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Open Google Colab with Template
+              </Button>
+            </div>
+          </div>
+        );
+      case 3:
+        return (
+          <div className="space-y-4">
+            <div className="bg-accent/20 p-4 rounded-md space-y-3">
+              <h3 className="font-medium flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-accent" />
+                Almost Done!
+              </h3>
+              <p className="text-sm">
+                After your video has finished generating in Colab:
+              </p>
+              <ol className="list-decimal list-inside space-y-2 text-sm">
+                <li>Open your Google Drive</li>
+                <li>Find your newly created video file</li>
+                <li>Right-click and select "Get link"</li>
+                <li>Set the sharing to "Anyone with the link"</li>
+                <li>Copy the link and paste it below</li>
+              </ol>
+              
+              <div className="space-y-3 pt-2">
+                <div>
+                  <Label htmlFor="video-title">Video Title</Label>
+                  <Input
+                    id="video-title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Enter a title for your video"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="video-url">Video URL from Google Drive</Label>
+                  <Input
+                    id="video-url"
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    placeholder="https://drive.google.com/file/d/..."
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Enter the shareable link to your Colab-generated video
+                  </p>
+                </div>
+                
+                <Button 
+                  onClick={handleImportVideo} 
+                  disabled={isImporting}
+                  className="w-full gap-2"
+                >
+                  {isImporting ? (
+                    "Importing..."
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4" />
+                      Import Video
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -79,78 +199,33 @@ const ColabVideoGenerator = ({ onComplete }: ColabVideoGeneratorProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="bg-accent/20 p-4 rounded-md space-y-3">
-          <h3 className="font-medium">Generate AI Videos with Google Colab's Free GPU</h3>
-          <ol className="list-decimal list-inside space-y-2 text-sm">
-            <li>Click the button below to open Google Colab</li>
-            <li>Copy your chosen model code (from the Code Snippets tab) into the notebook</li>
-            <li>Run the notebook cells (press play button or Shift+Enter)</li>
-            <li>The generated video will be saved to your Google Drive</li>
-            <li>Get a shareable link from Google Drive and paste it below</li>
-          </ol>
-          
-          <Button 
-            variant="outline" 
-            className="mt-2 gap-2"
-            onClick={() => window.open(colabNotebookUrl, "_blank")}
-          >
-            <ExternalLink className="h-4 w-4" />
-            Open Google Colab
-          </Button>
+        <div className="flex justify-between mb-2">
+          <Badge variant={currentStep >= 1 ? "default" : "outline"} className="flex gap-1">
+            <span>1.</span> Select Model
+          </Badge>
+          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          <Badge variant={currentStep >= 2 ? "default" : "outline"} className="flex gap-1">
+            <span>2.</span> Run in Colab
+          </Badge>
+          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          <Badge variant={currentStep >= 3 ? "default" : "outline"} className="flex gap-1">
+            <span>3.</span> Import Video
+          </Badge>
         </div>
         
-        <Tabs defaultValue="code">
-          <TabsList className="grid grid-cols-2">
-            <TabsTrigger value="code">Code Snippets</TabsTrigger>
-            <TabsTrigger value="import">Import Video</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="code" className="pt-4">
-            <ModelCodeSnippets />
-          </TabsContent>
-          
-          <TabsContent value="import" className="pt-4">
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="video-title">Video Title</Label>
-                <Input
-                  id="video-title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter a title for your video"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="video-url">Video URL</Label>
-                <Input
-                  id="video-url"
-                  value={videoUrl}
-                  onChange={(e) => setVideoUrl(e.target.value)}
-                  placeholder="https://drive.google.com/file/d/..."
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Enter a public URL where your Colab-generated video is hosted (Google Drive, YouTube, etc.)
-                </p>
-              </div>
-              
-              <Button 
-                onClick={handleImportVideo} 
-                disabled={isImporting}
-                className="w-full gap-2"
-              >
-                {isImporting ? (
-                  "Importing..."
-                ) : (
-                  <>
-                    <Upload className="h-4 w-4" />
-                    Import Video
-                  </>
-                )}
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
+        <Separator className="my-2" />
+        
+        {renderStepContent()}
+
+        {currentStep > 1 && (
+          <Button 
+            variant="outline" 
+            className="mt-2"
+            onClick={() => setCurrentStep(currentStep - 1)}
+          >
+            Back
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
