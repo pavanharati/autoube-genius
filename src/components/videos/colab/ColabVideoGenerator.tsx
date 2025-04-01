@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileVideo, Upload, ExternalLink } from "lucide-react";
+import { FileVideo, Upload, ExternalLink, Beaker } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,7 +74,7 @@ const ColabVideoGenerator = ({ onComplete }: ColabVideoGeneratorProps) => {
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <FileVideo className="h-5 w-5 text-accent" />
+          <Beaker className="h-5 w-5 text-accent" />
           Google Colab Video Generator
         </CardTitle>
       </CardHeader>

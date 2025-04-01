@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Upload, TrendingUp, Plus, MessageSquareText, FileVideo, Flask } from "lucide-react";
+import { Upload, TrendingUp, Plus, MessageSquareText, FileVideo, Beaker } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import VideoList from "@/components/videos/VideoList";
 import VideoDetails from "@/components/videos/VideoDetails";
@@ -230,7 +230,7 @@ const Videos = () => {
           <Dialog open={showColabGenerator} onOpenChange={setShowColabGenerator}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2">
-                <Flask className="h-4 w-4" />
+                <Beaker className="h-4 w-4" />
                 Colab AI Video
               </Button>
             </DialogTrigger>
