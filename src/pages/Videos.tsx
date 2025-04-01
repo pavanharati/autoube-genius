@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Upload, TrendingUp, Plus, MessageSquareText, FileVideo } from "lucide-react";
+import { Upload, TrendingUp, Plus, MessageSquareText, FileVideo, Flask } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import VideoList from "@/components/videos/VideoList";
 import VideoDetails from "@/components/videos/VideoDetails";
 import VideoGenerator from "@/components/videos/VideoGenerator";
 import TextToVideoGenerator from "@/components/videos/TextToVideoGenerator";
 import StockVideoGenerator from "@/components/videos/StockVideoGenerator";
+import ColabVideoGenerator from "@/components/videos/colab/ColabVideoGenerator";
 import { Video, VideoGenerationOptions } from "@/types/video";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +18,7 @@ const Videos = () => {
   const [showGenerator, setShowGenerator] = useState(false);
   const [showTextToVideo, setShowTextToVideo] = useState(false);
   const [showStockVideoGenerator, setShowStockVideoGenerator] = useState(false);
+  const [showColabGenerator, setShowColabGenerator] = useState(false);
   
   const [videos, setVideos] = useState<Video[]>([
     {
@@ -149,6 +151,24 @@ const Videos = () => {
     setShowStockVideoGenerator(false);
   };
 
+  const handleColabVideoComplete = (result: { videoUrl: string; captionsUrl?: string; title: string }) => {
+    const newVideo: Video = {
+      id: (videos.length + 1).toString(),
+      title: result.title,
+      thumbnail: "https://images.unsplash.com/photo-1593697821028-7cc59cfd7399",
+      status: "Ready",
+      duration: "00:30",
+      uploadDate: new Date().toISOString().split('T')[0],
+      videoUrl: result.videoUrl,
+      captions: result.captionsUrl,
+      category: "AI Generated",
+    };
+    
+    setVideos([...videos, newVideo]);
+    setSelectedVideo(newVideo.id);
+    setShowColabGenerator(false);
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -204,6 +224,21 @@ const Videos = () => {
                 <DialogTitle>Create Stock Footage Video</DialogTitle>
               </DialogHeader>
               <StockVideoGenerator onComplete={handleStockVideoComplete} />
+            </DialogContent>
+          </Dialog>
+          
+          <Dialog open={showColabGenerator} onOpenChange={setShowColabGenerator}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Flask className="h-4 w-4" />
+                Colab AI Video
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl">
+              <DialogHeader>
+                <DialogTitle>Google Colab Video Generator</DialogTitle>
+              </DialogHeader>
+              <ColabVideoGenerator onComplete={handleColabVideoComplete} />
             </DialogContent>
           </Dialog>
           
