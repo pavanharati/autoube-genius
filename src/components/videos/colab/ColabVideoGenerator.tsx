@@ -10,7 +10,6 @@ import { Tabs, TabsList, TabsContent, TabsTrigger } from "@/components/ui/tabs";
 import ModelCodeSnippets from "./ModelCodeSnippets";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 interface ColabVideoGeneratorProps {
   onComplete?: (result: { videoUrl: string; captionsUrl?: string; title: string }) => void;
@@ -22,7 +21,6 @@ const ColabVideoGenerator = ({ onComplete }: ColabVideoGeneratorProps) => {
   const [isImporting, setIsImporting] = useState(false);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [selectedModel, setSelectedModel] = useState<string>("");
-  const [isColabOpen, setIsColabOpen] = useState(false);
   const { toast } = useToast();
 
   // Colab notebook URL with pre-configured template
@@ -41,8 +39,13 @@ const ColabVideoGenerator = ({ onComplete }: ColabVideoGeneratorProps) => {
   };
 
   const handleOpenColab = () => {
-    setIsColabOpen(true);
+    window.open(getColabNotebookUrl(), "_blank");
     setCurrentStep(3);
+    
+    toast({
+      title: "Google Colab Opened",
+      description: "Continue your workflow in the Colab tab and come back when your video is ready.",
+    });
   };
 
   const handleImportVideo = async () => {
@@ -85,7 +88,6 @@ const ColabVideoGenerator = ({ onComplete }: ColabVideoGeneratorProps) => {
       // Reset workflow for next time
       setCurrentStep(1);
       setSelectedModel("");
-      setIsColabOpen(false);
     } catch (error) {
       console.error("Error importing video:", error);
       toast({
@@ -110,31 +112,20 @@ const ColabVideoGenerator = ({ onComplete }: ColabVideoGeneratorProps) => {
             <div className="bg-accent/20 p-4 rounded-md space-y-3">
               <h3 className="font-medium">Generate Video with {selectedModel}</h3>
               <ol className="list-decimal list-inside space-y-2 text-sm">
-                <li>Click the "Open Embedded Colab" button below</li>
+                <li>Click the "Open Google Colab" button below</li>
                 <li>Copy the {selectedModel} code into the notebook</li>
                 <li>Run the notebook cells (press play button or Shift+Enter)</li>
                 <li>The generated video will be saved to your Google Drive</li>
               </ol>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <Button 
-                  variant="default" 
-                  className="w-full gap-2"
-                  onClick={handleOpenColab}
-                >
-                  <Beaker className="h-4 w-4" />
-                  Open Embedded Colab
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full gap-2"
-                  onClick={() => window.open(getColabNotebookUrl(), "_blank")}
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Open in New Tab
-                </Button>
-              </div>
+              <Button 
+                variant="default" 
+                className="w-full gap-2"
+                onClick={handleOpenColab}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Open Google Colab
+              </Button>
             </div>
           </div>
         );
@@ -205,64 +196,43 @@ const ColabVideoGenerator = ({ onComplete }: ColabVideoGeneratorProps) => {
   };
 
   return (
-    <>
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Beaker className="h-5 w-5 text-accent" />
-            Google Colab Video Generator
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex justify-between mb-2">
-            <Badge variant={currentStep >= 1 ? "default" : "outline"} className="flex gap-1">
-              <span>1.</span> Select Model
-            </Badge>
-            <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            <Badge variant={currentStep >= 2 ? "default" : "outline"} className="flex gap-1">
-              <span>2.</span> Run in Colab
-            </Badge>
-            <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            <Badge variant={currentStep >= 3 ? "default" : "outline"} className="flex gap-1">
-              <span>3.</span> Import Video
-            </Badge>
-          </div>
-          
-          <Separator className="my-2" />
-          
-          {renderStepContent()}
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Beaker className="h-5 w-5 text-accent" />
+          Google Colab Video Generator
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex justify-between mb-2">
+          <Badge variant={currentStep >= 1 ? "default" : "outline"} className="flex gap-1">
+            <span>1.</span> Select Model
+          </Badge>
+          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          <Badge variant={currentStep >= 2 ? "default" : "outline"} className="flex gap-1">
+            <span>2.</span> Run in Colab
+          </Badge>
+          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          <Badge variant={currentStep >= 3 ? "default" : "outline"} className="flex gap-1">
+            <span>3.</span> Import Video
+          </Badge>
+        </div>
+        
+        <Separator className="my-2" />
+        
+        {renderStepContent()}
 
-          {currentStep > 1 && (
-            <Button 
-              variant="outline" 
-              className="mt-2"
-              onClick={() => setCurrentStep(currentStep - 1)}
-            >
-              Back
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-
-      <Sheet open={isColabOpen} onOpenChange={setIsColabOpen}>
-        <SheetContent side="bottom" className="h-[80vh] w-full p-0 sm:max-w-none">
-          <SheetHeader className="p-4 border-b">
-            <SheetTitle className="flex items-center gap-2">
-              <Beaker className="h-5 w-5 text-accent" />
-              Google Colab - {selectedModel}
-            </SheetTitle>
-          </SheetHeader>
-          <div className="h-[calc(100%-60px)] w-full">
-            <iframe 
-              src={getColabNotebookUrl()} 
-              className="w-full h-full" 
-              title="Google Colab Notebook"
-              allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
-    </>
+        {currentStep > 1 && (
+          <Button 
+            variant="outline" 
+            className="mt-2"
+            onClick={() => setCurrentStep(currentStep - 1)}
+          >
+            Back
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
