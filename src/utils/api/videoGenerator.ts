@@ -156,7 +156,7 @@ export const generateStockFootageVideo = async (
         musicStyle: options.musicStyle || "inspirational",
         captionsEnabled: options.captionsEnabled !== false,
         captionsUrl: captionsResponse.captionsUrl,
-        fullVideo: true // <-- Add this flag to ensure we get a complete video
+        fullVideo: true // Ensure we're requesting a full-length video
       }
     });
     
