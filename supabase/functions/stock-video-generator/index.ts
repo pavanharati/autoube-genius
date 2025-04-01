@@ -35,49 +35,93 @@ const stockSources = {
 
 // Function to extract key scenes from a script
 function extractScenesFromScript(script: string): string[] {
+  // Remove visual cues and timestamps
+  const cleanScript = script.replace(/\([^)]*\)/g, '') // Remove content in parentheses
+                          .replace(/\d+:\d+\s*-\s*\d+:\d+/g, '') // Remove timestamps
+                          .replace(/🎯|💸|💡|🔴|✅|💰|🎥|📢|💭|👇|💬/g, ''); // Remove emojis
+  
   // Split script into paragraphs or by punctuation
-  const sentences = script.split(/(?<=[.!?])\s+/);
+  const sentences = cleanScript.split(/(?<=[.!?])\s+/);
   
   // Filter out short sentences or non-descriptive content
-  const significantSentences = sentences.filter(sentence => 
-    sentence.trim().length > 20 && 
-    !sentence.includes("Introduction:") &&
-    !sentence.includes("Conclusion:") &&
-    !sentence.match(/^\d+:\d+$/) // Filter out timestamps
-  );
+  const significantSentences = sentences.filter(sentence => {
+    const trimmed = sentence.trim();
+    return trimmed.length > 15 && 
+      !trimmed.startsWith("Introduction:") &&
+      !trimmed.startsWith("Conclusion:") &&
+      !trimmed.match(/^\d+:\d+$/) && // Filter out timestamps
+      !trimmed.includes("Subscribe") &&
+      !trimmed.includes("comments") &&
+      !trimmed.includes("Like,") &&
+      !trimmed.includes("hook:") &&
+      !trimmed.includes("problem:") &&
+      !trimmed.includes("solutions:") &&
+      !trimmed.includes("call to action");
+  });
   
-  // Take a relevant subset to keep scene count reasonable
-  // For a 10-minute video, ~30 scenes might be appropriate
-  const scenesToExtract = Math.min(30, Math.ceil(significantSentences.length / 2));
+  // For a 10-minute video, aim for ~30-50 scenes
+  const scenesToExtract = Math.min(50, Math.ceil(significantSentences.length * 0.7));
   
   const scenes: string[] = [];
-  const step = Math.ceil(significantSentences.length / scenesToExtract);
   
-  for (let i = 0; i < significantSentences.length; i += step) {
-    if (scenes.length < scenesToExtract) {
-      scenes.push(significantSentences[i]);
+  if (significantSentences.length <= scenesToExtract) {
+    // If we don't have many sentences, use them all
+    return significantSentences;
+  } else {
+    // Otherwise, distribute scenes evenly throughout the script
+    const step = Math.ceil(significantSentences.length / scenesToExtract);
+    
+    for (let i = 0; i < significantSentences.length; i += step) {
+      if (scenes.length < scenesToExtract) {
+        const sentence = significantSentences[i].trim();
+        if (sentence.length > 0) {
+          scenes.push(sentence);
+        }
+      }
     }
   }
   
+  console.log(`Extracted ${scenes.length} scenes from script`);
   return scenes;
 }
 
 // Function to generate search terms from scenes
 function generateSearchTerms(scenes: string[]): string[] {
-  return scenes.map(scene => {
+  const searchTerms = scenes.map(scene => {
     // Extract key visual elements from the scene description
-    const keywords = scene
-      .replace(/[.,;:!?()'"]/g, '')
-      .split(' ')
-      .filter(word => 
-        word.length > 3 && 
-        !['this', 'that', 'with', 'from', 'about', 'what', 'when', 'where', 'which', 'would', 'could', 'should'].includes(word.toLowerCase())
-      );
+    const cleanScene = scene.replace(/[.,;:!?()'"]/g, '');
+    const words = cleanScene.split(' ');
     
-    // Take the 3-5 most relevant words to form a search query
-    const queryWords = keywords.slice(0, Math.min(5, keywords.length));
+    // Filter out common words and short words
+    const keywords = words.filter(word => {
+      const lowerWord = word.toLowerCase();
+      return word.length > 3 && 
+        !['this', 'that', 'with', 'from', 'about', 'what', 'when', 'where', 'which', 
+          'would', 'could', 'should', 'have', 'were', 'their', 'there', 'they', 'will',
+          'been', 'being'].includes(lowerWord);
+    });
+    
+    // For money-related content, ensure we include financial terms
+    let moneyTerms = [];
+    if (scene.toLowerCase().includes('money') || scene.toLowerCase().includes('finance') || 
+        scene.toLowerCase().includes('saving') || scene.toLowerCase().includes('budget')) {
+      moneyTerms = ['money', 'finance', 'budget', 'savings'];
+    }
+    
+    // For tech content, add tech-related terms
+    if (scene.toLowerCase().includes('tech') || scene.toLowerCase().includes('digital')) {
+      moneyTerms = ['technology', 'digital', 'computer', 'modern'];
+    }
+    
+    // Combine all terms and take the most relevant words to form a search query
+    const allTerms = [...keywords, ...moneyTerms];
+    const queryWords = allTerms.slice(0, Math.min(5, allTerms.length));
+    
     return queryWords.join(' ');
   });
+  
+  console.log(`Generated ${searchTerms.length} search terms`);
+  return searchTerms;
 }
 
 // Function to estimate video duration based on script length
@@ -102,10 +146,9 @@ async function fetchStockVideos(
   const results: string[] = [];
   
   // Determine how many videos we should fetch based on target duration
-  // Average stock clip is about 15-30 seconds
-  // So for a 10-minute video, we might need 20-40 clips
-  const estimatedClipsNeeded = Math.max(25, Math.ceil(targetDuration * 60 / 15));
-  const clipsPerTerm = Math.ceil(estimatedClipsNeeded / searchTerms.length);
+  // For a 10-minute video, we need ~40-50 clips (on average 15 seconds per clip)
+  const estimatedClipsNeeded = Math.max(30, Math.ceil(targetDuration * 60 / 15));
+  const clipsPerTerm = Math.ceil(estimatedClipsNeeded / searchTerms.length) + 1; // Add 1 for safety
   
   // For mixed source, we'll rotate through the available APIs
   const sources = source === "mixed" 
@@ -115,6 +158,10 @@ async function fetchStockVideos(
   let sourceIndex = 0;
   
   for (const term of searchTerms) {
+    if (results.length >= estimatedClipsNeeded) {
+      break; // We have enough clips already
+    }
+    
     const currentSource = sources[sourceIndex % sources.length] as "pixabay" | "pexels";
     sourceIndex++;
     
@@ -128,13 +175,15 @@ async function fetchStockVideos(
           // Get multiple video URLs from the results
           for (let i = 0; i < Math.min(clipsPerTerm, data.hits.length); i++) {
             const videoData = data.hits[i].videos;
+            // Prefer larger videos for better quality
             const videoUrl = videoData.large?.url || videoData.medium?.url || videoData.small?.url;
-            if (videoUrl) {
+            if (videoUrl && !results.includes(videoUrl)) {
               results.push(videoUrl);
             }
+            
+            // Break if we have enough clips
+            if (results.length >= estimatedClipsNeeded) break;
           }
-          
-          if (results.length > 0) continue;
         }
       } 
       else if (currentSource === "pexels") {
@@ -150,13 +199,15 @@ async function fetchStockVideos(
           // Get multiple video URLs from the results
           for (let i = 0; i < Math.min(clipsPerTerm, data.videos.length); i++) {
             const videoFiles = data.videos[i].video_files;
-            const videoFile = videoFiles.find((file: any) => file.quality === "sd" || file.quality === "hd");
-            if (videoFile && videoFile.link) {
+            // Prefer HD or SD quality videos
+            const videoFile = videoFiles.find((file: any) => file.quality === "hd" || file.quality === "sd");
+            if (videoFile && videoFile.link && !results.includes(videoFile.link)) {
               results.push(videoFile.link);
             }
+            
+            // Break if we have enough clips
+            if (results.length >= estimatedClipsNeeded) break;
           }
-          
-          if (results.length > 0) continue;
         }
       }
     } catch (error) {
@@ -180,6 +231,7 @@ async function fetchStockVideos(
     }
   }
   
+  console.log(`Retrieved ${results.length} stock videos`);
   return results;
 }
 
@@ -187,18 +239,20 @@ async function fetchStockVideos(
 async function composeStockFootageVideo(
   videoClips: string[], 
   title: string,
-  targetDuration: number
+  targetDuration: number,
+  fullVideo: boolean = true
 ): Promise<string> {
   // In a real production environment, this would connect to a video editing service
   // that could stitch together the clips with transitions, adjust timing, etc.
   
-  // For now, we'll return the most appropriate single clip or a default
+  // For now, if we have multiple clips, return the first clip as "main video"
+  // but also return all clips for the frontend to handle
   if (videoClips.length === 0) {
     return "https://cdn.pixabay.com/vimeo/328370995/36986.mp4?width=1280&hash=f463d7ac5de47bc5fc0ba54e74cb3482d66358c9";
   }
   
-  // Return a good quality real stock footage video
-  // In a production environment, this would be a properly composed video
+  // IMPORTANT: When fullVideo is true, return the FIRST clip as main video
+  // and ALL clips in the processingDetails
   return videoClips[0];
 }
 
@@ -242,8 +296,8 @@ serve(async (req) => {
     const stockVideos = await fetchStockVideos(searchTerms, stockSource, targetDuration);
     console.log(`Retrieved ${stockVideos.length} stock videos`);
     
-    // 4. Compose the final video (in production, this would stitch together the clips)
-    const finalVideoUrl = await composeStockFootageVideo(stockVideos, title, targetDuration);
+    // 4. Select the main video (in a production environment, this would be a proper composition)
+    const finalVideoUrl = await composeStockFootageVideo(stockVideos, title, targetDuration, fullVideo);
     
     // Calculate the actual duration - in a real implementation this would be from the video
     const actualDurationSeconds = targetDuration * 60; // Convert minutes to seconds
@@ -261,7 +315,7 @@ serve(async (req) => {
           actualDuration: actualDurationSeconds, // seconds
           stockSource: stockSource,
           musicStyle: musicStyle,
-          videos: stockVideos // Return all the video clips too
+          videos: stockVideos // Return all the video clips
         }
       }),
       {

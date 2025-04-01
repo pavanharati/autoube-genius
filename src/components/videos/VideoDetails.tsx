@@ -3,10 +3,11 @@ import { useState, useEffect } from "react";
 import { type Video } from "@/types/video";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit, Play, Trash2, Video as VideoIcon } from "lucide-react";
+import { Edit, Play, Trash2, Video as VideoIcon, Eye } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface VideoDetailsProps {
   video: Video | undefined;
@@ -16,6 +17,7 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [captionsEnabled, setCaptionsEnabled] = useState(true);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [showAllClips, setShowAllClips] = useState(false);
   const { toast } = useToast();
 
   // Reset video state when video changes
@@ -78,6 +80,9 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
   
   // Determine if captions are available
   const hasCaptions = isValidUrl(video.captions);
+  
+  // Check if we have stock footage clips
+  const hasStockClips = video.videoClips && video.videoClips.length > 0;
 
   return (
     <Card className="h-full">
@@ -196,10 +201,38 @@ const VideoDetails = ({ video }: VideoDetailsProps) => {
                 <p className="text-muted-foreground">Trending for {video.trendingPeriod || "day"}</p>
               </div>
             )}
-            {video.videoClips && video.videoClips.length > 0 && (
+            {hasStockClips && (
               <div className="md:col-span-2">
-                <h3 className="font-semibold mb-1">Stock Footage</h3>
-                <p className="text-muted-foreground">Generated using {video.videoClips.length} stock clips</p>
+                <div className="flex justify-between items-center">
+                  <h3 className="font-semibold mb-1">Stock Footage</h3>
+                  <Dialog open={showAllClips} onOpenChange={setShowAllClips}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <Eye className="h-4 w-4" />
+                        View All Clips ({video.videoClips?.length})
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Stock Footage Clips</DialogTitle>
+                      </DialogHeader>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        {video.videoClips?.map((clip, index) => (
+                          <div key={index} className="aspect-video rounded overflow-hidden">
+                            <video
+                              src={clip}
+                              className="w-full h-full object-cover"
+                              controls
+                              preload="metadata"
+                            ></video>
+                            <p className="text-xs mt-1 text-center text-muted-foreground">Clip {index + 1}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                <p className="text-muted-foreground">Generated using {video.videoClips?.length} stock clips</p>
               </div>
             )}
           </div>
